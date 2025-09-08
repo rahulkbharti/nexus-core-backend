@@ -1,0 +1,80 @@
+import jwt, { SignOptions } from "jsonwebtoken";
+import dotenv from "dotenv";
+
+dotenv.config({ path: ".env.development" });
+
+const accessTokenSecret = process.env.JWT_ACCESS_SECRET || "s";
+const refreshTokenSecret = process.env.JWT_REFRESH_SECRET || "r";
+
+const accessTokenExpiresIn = process.env.JWT_EXPIRES_IN || "15m";
+const refreshTokenExpiresIn = process.env.JWT_REFRESH_EXPIRES_IN || "7d";
+
+export const createAccessToken = (payload: {
+  id: number;
+  email: string;
+}): string => {
+  if (!accessTokenSecret || !accessTokenExpiresIn) {
+    console.error(
+      "JWT secret or access token expiration time is not defined in environment variables."
+    );
+    throw new Error("Server configuration error: JWT settings are missing.");
+  }
+  const signOptions: SignOptions = {
+    expiresIn: accessTokenExpiresIn as SignOptions["expiresIn"],
+    algorithm: "HS256",
+  };
+  return jwt.sign({ ...payload }, accessTokenSecret, signOptions);
+};
+
+export const createRefreshToken = (payload: {
+  id: number;
+  email: string;
+}): string => {
+  if (!refreshTokenSecret || !refreshTokenExpiresIn) {
+    console.error(
+      "JWT secret or refresh token expiration time is not defined in environment variables."
+    );
+    throw new Error("Server configuration error: JWT settings are missing.");
+  }
+  const signOptions: SignOptions = {
+    expiresIn: refreshTokenExpiresIn as SignOptions["expiresIn"],
+    algorithm: "HS256",
+  };
+  return jwt.sign({ ...payload }, refreshTokenSecret, signOptions);
+};
+
+export const verifyAccessToken = (token: string): any => {
+  if (!accessTokenSecret) {
+    console.error("JWT access secret is not defined in environment variables.");
+    throw new Error("Server configuration error: JWT settings are missing.");
+  }
+  try {
+    return jwt.verify(token, accessTokenSecret);
+  } catch (error) {
+    console.error("Failed to verify access token:", error);
+    throw new Error("Unauthorized");
+  }
+};
+
+export const verifyRefreshToken = (token: string): any => {
+  console.log("Verifying Refresh Token:", token);
+  if (!refreshTokenSecret) {
+    console.error(
+      "JWT refresh secret is not defined in environment variables."
+    );
+    throw new Error("Server configuration error: JWT settings are missing.");
+  }
+  try {
+    return jwt.verify(token, refreshTokenSecret);
+  } catch (error) {
+    console.error("Failed to verify refresh token:", error);
+    throw new Error("Unauthorized");
+  }
+};
+
+const createTokens = (payload: { id: number; email: string }) => {
+  const accessToken = createAccessToken(payload);
+  const refreshToken = createRefreshToken(payload);
+  return { accessToken, refreshToken };
+};
+export default createTokens;

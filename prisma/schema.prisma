@@ -14,10 +14,80 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Book {
+// Organizational Models
+// BUSINESS LOGIC : If Someone have to create or register organization send request to admin
+model Organization {
+  id          Int          @id @default(autoincrement())
+  name        String
+  address     String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  default     Boolean      @default(false)
+  adminUserId Int?
+  Admin       Admin?       @relation(fields: [adminUserId], references: [userId])
+  Member      Member[]
+  Staff       Staff[]
+  StaffGroup  StaffGroup[]
+}
+
+// AUTHENTICATION AND AUTHORIZATION MODELS
+model User {
   id        Int      @id @default(autoincrement())
-  title     String
-  author    String
-  category  String?
+  email     String   @unique
+  password  String
+  name      String?
+  role      Role
+  isActive  Boolean  @default(false)
+  member    Member?
+  staff     Staff?
+  admin     Admin?
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Member {
+  userId         Int           @id @default(autoincrement())
+  organizationId Int
+  user           User          @relation(fields: [userId], references: [id])
+  Organization   Organization? @relation(fields: [organizationId], references: [id])
+}
+
+model Staff {
+  userId            Int           @id @default(autoincrement())
+  groupId           Int
+  organizationId    Int
+  user              User          @relation(fields: [userId], references: [id])
+  group             StaffGroup    @relation(fields: [groupId], references: [id])
+  directPermissions Permission[]  @relation("UserPermissions")
+  Organization      Organization? @relation(fields: [organizationId], references: [id])
+}
+
+model Admin {
+  userId        Int            @id @default(autoincrement())
+  user          User           @relation(fields: [userId], references: [id])
+  superAdmin    Boolean        @default(false)
+  organizations Organization[]
+}
+
+model StaffGroup {
+  id             Int          @id @default(autoincrement())
+  name           String
+  organizationId Int
+  permissions    Permission[] @relation("StaffGroupPermissions")
+  staff          Staff[]
+  organization   Organization @relation(fields: [organizationId], references: [id])
+}
+
+model Permission {
+  id          Int          @id @default(autoincrement())
+  name        String       @unique
+  description String?
+  staffGroups StaffGroup[] @relation("StaffGroupPermissions")
+  staffs      Staff[]      @relation("UserPermissions") // direct user permissions
+}
+
+enum Role {
+  MEMBER
+  STAFF
+  ADMIN
 }

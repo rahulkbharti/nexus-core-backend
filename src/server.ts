@@ -1,12 +1,15 @@
 import express, { type Request, type Response } from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-
+// import mainRouter from "./routes/main.routes.ts";
+import s from "./app";
 dotenv.config({ path: "./.env.developement" });
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+console.log(s);
+// app.use("/api", mainRouter);
 
 // Simple route
 app.get("/", (req: Request, res: Response) => {
