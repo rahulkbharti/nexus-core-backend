@@ -1,8 +1,8 @@
-import prisma from "../../utils/prisma.ts";
+import prisma from "../../utils/prisma";
 import { type Request, type Response } from "express";
 import bcrypt from "bcryptjs";
 
-import createTokens from "../../utils/jwt.ts";
+import createTokens from "../../utils/jwt";
 
 export const login = async (req: Request, res: Response) => {
   try {

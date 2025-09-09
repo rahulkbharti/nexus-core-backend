@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import prisma from "../../utils/prisma.ts";
+import prisma from "../../utils/prisma";
 
 export const groupCreate = async (req: Request, res: Response) => {
   try {

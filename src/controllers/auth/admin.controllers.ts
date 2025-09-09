@@ -1,6 +1,6 @@
-import prisma from "../../utils/prisma.ts";
+import prisma from "../../utils/prisma";
 import { type Request, type Response } from "express";
-import { Role } from "../../../generated/prisma/index.js";
+import { Role } from "../../generated/prisma/index.js";
 import bcrypt from "bcryptjs";
 // Create Admin
 export const registerAdmin = async (req: Request, res: Response) => {

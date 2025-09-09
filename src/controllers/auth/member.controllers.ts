@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
-import prisma from "../../utils/prisma.ts";
-import { Role } from "../../../generated/prisma/index.js";
+import prisma from "../../utils/prisma";
+import { Role } from "../../generated/prisma/index.js";
 import bcrypt from "bcryptjs";
 
 export const registerMember = async (req: Request, res: Response) => {

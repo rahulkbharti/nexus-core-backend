@@ -1,5 +1,5 @@
 import { type Request, type Response } from "express";
-import prisma from "../../utils/prisma.ts";
+import prisma from "../../utils/prisma";
 
 export const createOrg = async (req: Request, res: Response) => {
   try {

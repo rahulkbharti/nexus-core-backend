@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from "express";
-import { verifyAccessToken } from "../utils/jwt.ts";
-import prisma from "../utils/prisma.ts";
-
+import { verifyAccessToken } from "../utils/jwt";
+import prisma from "../utils/prisma";
 // Extend Express Request interface to include 'user'
 declare global {
   namespace Express {
