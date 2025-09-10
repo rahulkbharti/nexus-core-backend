@@ -77,6 +77,9 @@ model StaffGroup {
   permissions    Permission[] @relation("StaffGroupPermissions")
   staff          Staff[]
   organization   Organization @relation(fields: [organizationId], references: [id])
+
+  @@unique([name, organizationId])
+  @@index([name])
 }
 
 model Permission {

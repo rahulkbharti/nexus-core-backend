@@ -2,13 +2,15 @@ import express, { type Router } from "express";
 import {
   getStaffs,
   registerStaff,
+  getStaffById,
+  updateStaff,
+  deleteStaff,
 } from "../../../controllers/auth/staff.controllers";
-import {
-  authMiddleware,
-  authorization,
-} from "../../../middlewares/auth.middlewares";
 
 const router: Router = express.Router();
 router.post("/register", registerStaff);
-router.get("/", authMiddleware, authorization(["GET_STAFFS"]), getStaffs);
+router.get("/", getStaffs);
+router.get("/:userId", getStaffById);
+router.put("/:userId", updateStaff);
+router.delete("/:userId", deleteStaff);
 export default router;

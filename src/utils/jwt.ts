@@ -10,8 +10,11 @@ const accessTokenExpiresIn = process.env.JWT_EXPIRES_IN || "15m";
 const refreshTokenExpiresIn = process.env.JWT_REFRESH_EXPIRES_IN || "7d";
 
 export const createAccessToken = (payload: {
-  id: number;
+  userId: number;
   email: string;
+  permissions: string[];
+  role: string;
+  organizationId: number;
 }): string => {
   if (!accessTokenSecret || !accessTokenExpiresIn) {
     console.error(
@@ -27,8 +30,11 @@ export const createAccessToken = (payload: {
 };
 
 export const createRefreshToken = (payload: {
-  id: number;
+  userId: number;
   email: string;
+  permissions: string[];
+  role: string;
+  organizationId: number;
 }): string => {
   if (!refreshTokenSecret || !refreshTokenExpiresIn) {
     console.error(
@@ -43,21 +49,22 @@ export const createRefreshToken = (payload: {
   return jwt.sign({ ...payload }, refreshTokenSecret, signOptions);
 };
 
-export const verifyAccessToken = (token: string): any => {
+export const verifyAccessToken = async (token: string) => {
   if (!accessTokenSecret) {
     console.error("JWT access secret is not defined in environment variables.");
     throw new Error("Server configuration error: JWT settings are missing.");
   }
   try {
-    return jwt.verify(token, accessTokenSecret);
+    const decode = jwt.verify(token, accessTokenSecret);
+    // console.log(decode);
+    return decode;
   } catch (error) {
-    console.error("Failed to verify access token:", error);
-    throw new Error("Unauthorized");
+    // console.error("Failed to verify access token:", error);
+    return null;
   }
 };
 
-export const verifyRefreshToken = (token: string): any => {
-  console.log("Verifying Refresh Token:", token);
+export const verifyRefreshToken = async (token: string) => {
   if (!refreshTokenSecret) {
     console.error(
       "JWT refresh secret is not defined in environment variables."
@@ -67,12 +74,18 @@ export const verifyRefreshToken = (token: string): any => {
   try {
     return jwt.verify(token, refreshTokenSecret);
   } catch (error) {
-    console.error("Failed to verify refresh token:", error);
-    throw new Error("Unauthorized");
+    // console.error("Failed to verify refresh token:", error);
+    return null;
   }
 };
 
-const createTokens = (payload: { id: number; email: string }) => {
+const createTokens = (payload: {
+  userId: number;
+  email: string;
+  permissions: string[];
+  role: string;
+  organizationId: number;
+}) => {
   const accessToken = createAccessToken(payload);
   const refreshToken = createRefreshToken(payload);
   return { accessToken, refreshToken };

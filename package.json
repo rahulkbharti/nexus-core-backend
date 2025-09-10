@@ -15,10 +15,12 @@
   "dependencies": {
     "@prisma/client": "^6.15.0",
     "@types/dotenv": "^6.1.1",
+    "@types/ioredis": "^4.28.10",
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
     "dotenv": "^17.2.2",
     "express": "^5.1.0",
+    "ioredis": "^5.7.0",
     "jsonwebtoken": "^9.0.2",
     "prisma": "^6.6.0-dev.109",
     "tsx": "^4.20.5"
