@@ -2,3 +2,10 @@
 # Problem 1 : tsc && tsc-alias --resolve-full-paths not copying other files like "query_engine-windows.dll.node" 
 So youmay have to copy it mannually
 make sure to copy that file when you make CI_CD 
+
+# Problem 2 : Added Big File IN git commit histry
+# install if not available
+pip install git-filter-repo
+
+# remove the big file from entire history
+git filter-repo --path path/to/bigfile --invert-paths

@@ -17,6 +17,8 @@
    # make sure your redish server is running
 
    # Run Developement Server
+   # Create generated prisma client
+   npx prisma generate
    # Database Migration
    npx prisma migrate dev --name init
    # Run The server
