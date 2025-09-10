@@ -3,7 +3,7 @@ import {
   createOrg,
   getOrgById,
   getOrgs,
-} from "../../controllers/auth/org.controllers";
+} from "../../controllers/auth/org.controller";
 
 const router: Router = express.Router();
 router.post("/register", createOrg);

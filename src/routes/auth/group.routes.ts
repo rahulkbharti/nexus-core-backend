@@ -5,7 +5,7 @@ import {
   getGroups,
   groupCreate,
   updateGroup,
-} from "../../controllers/auth/group.controllers";
+} from "../../controllers/auth/group.controller";
 import { authMiddleware } from "../../middlewares/auth.middlewares";
 const router: Router = express.Router();
 router.post("/create", groupCreate);

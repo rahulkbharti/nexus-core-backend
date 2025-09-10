@@ -5,7 +5,7 @@ import {
   getAdminByUserId,
   updateAdmin,
   deleteAdmin,
-} from "../../../controllers/auth/admin.controllers";
+} from "../../../controllers/auth/admin.controller";
 
 const router: Router = express.Router();
 router.post("/register", registerAdmin);

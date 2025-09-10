@@ -3,7 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import mainRouter from "./routes/main.routes";
 import requestLogger from "./middlewares/requestLogger.middleware";
-import rateLimiter from "./middlewares/rateLimitor.middleware";
+import rateLimit from "express-rate-limit";
 
 dotenv.config();
 dotenv.config({ path: ".env.developement" });
@@ -15,14 +15,14 @@ app.use(express.json());
 app.use(requestLogger);
 app.set("trust proxy", 1);
 // This will allow 100 requests per 15 minutes from a single IP.
-// console.log(
-//   process.env.REQUEST_LIMITER_WINDOW_MS,
-//   process.env.REQUEST_LIMITER_MAX
-// );
 app.use(
-  rateLimiter({
-    windowMs: parseInt(process.env.REQUEST_LIMITER_WINDOW_MS || "15"),
-    max: parseInt(process.env.REQUEST_LIMITER_MAX || "100"),
+  rateLimit({
+    windowMs:
+      parseInt(process.env.REQUEST_LIMITER_WINDOW_MS || "1") * 60 * 1000,
+    max: parseInt(process.env.REQUEST_LIMITER_MAX || "10"),
+    message: "Too many requests, please try again later.",
+    standardHeaders: true,
+    legacyHeaders: false,
   })
 );
 

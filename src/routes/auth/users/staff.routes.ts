@@ -5,7 +5,7 @@ import {
   getStaffById,
   updateStaff,
   deleteStaff,
-} from "../../../controllers/auth/staff.controllers";
+} from "../../../controllers/auth/staff.controller";
 
 const router: Router = express.Router();
 router.post("/register", registerStaff);

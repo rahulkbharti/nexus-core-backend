@@ -5,7 +5,7 @@ import {
   getMemberById,
   updateMember,
   deleteMember,
-} from "../../../controllers/auth/member.controllers";
+} from "../../../controllers/auth/member.controller";
 import { authMiddleware } from "../../../middlewares/auth.middlewares";
 
 const router: Router = express.Router();
