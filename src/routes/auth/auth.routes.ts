@@ -6,10 +6,13 @@ import memberRouter from "./users/member.routes";
 import groupRouter from "./group.routes";
 import orgRouter from "./org.routes";
 import {
+  changePassword,
   login,
   logout,
   refreshToken,
+  sendOtp,
   updatePermissions,
+  verifyOtp,
 } from "../../controllers/auth/auth.controller";
 import { authMiddleware } from "../../middlewares/auth.middlewares";
 import adminMiddleware from "../../middlewares/admin.middlewares";
@@ -32,4 +35,9 @@ router.post(
 ); // Update Permissions route
 router.post("/logout", logout); // Logout route
 
+// Change Password route
+router.post("/change-password", authMiddleware, changePassword);
+// Forget Password route
+router.post("/send-otp", sendOtp);
+router.post("/verify-otp", verifyOtp);
 export default router;

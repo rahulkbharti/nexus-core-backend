@@ -2,10 +2,16 @@ import prisma from "../../utils/prisma";
 import { type Request, type Response } from "express";
 import bcrypt from "bcryptjs";
 import redis from "../../services/redis";
+import { v4 as uuidv4 } from "uuid";
+
 import createTokens, {
   createAccessToken,
   verifyRefreshToken,
 } from "../../utils/jwt";
+import {
+  sendOtpEmail,
+  sendPasswordResetSuccessEmail,
+} from "../../services/emailService";
 
 // Only for Staff USER ID
 const get_permissions = async (userId: number) => {
@@ -27,7 +33,7 @@ const get_permissions = async (userId: number) => {
   }
   return permissions;
 };
-
+// Login For Any User
 export const login = async (req: Request, res: Response) => {
   try {
     const { role } = req.params;
@@ -83,7 +89,7 @@ export const login = async (req: Request, res: Response) => {
     return res.status(500).json({ message: "Somthing Went Wrong" });
   }
 };
-
+// Logout for any User
 export const logout = async (req: Request, res: Response) => {
   try {
     const { refreshToken, accessToken } = req.body;
@@ -130,7 +136,7 @@ export const logout = async (req: Request, res: Response) => {
     await prisma.$disconnect();
   }
 };
-
+// Refresh token
 export const refreshToken = async (req: Request, res: Response) => {
   try {
     const { role } = req.params;
@@ -165,7 +171,7 @@ export const refreshToken = async (req: Request, res: Response) => {
     return res.status(500).json({ message: "Something Went Wrong" });
   }
 };
-
+// Update Permission
 export const updatePermissions = async (req: Request, res: Response) => {
   try {
     if (!req.user) {
@@ -186,9 +192,131 @@ export const updatePermissions = async (req: Request, res: Response) => {
       },
       include: { directPermissions: true },
     });
+    // I should I have to revoke all access tokens of this user
     res.status(200).json({ message: "Permissions Updated", update });
   } catch (e) {
     console.log(e);
     res.status(500).json({ message: "Something Went Wrong" });
+  }
+};
+
+/**
+ * FORGET PASSWORD
+ * RESET PASSWORD FLOW
+ * */
+const otpStore = new Map(); // In-memory store for OTPs
+const resetTokens = new Map(); // In-memory store for reset tokens
+const generateOtp = (): string =>
+  Math.floor(100000 + Math.random() * 900000).toString();
+
+// Send OTP
+export const sendOtp = async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ error: "Email is required" });
+    }
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    const otp = generateOtp();
+    const otpId = uuidv4();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes expiry
+
+    // Store OTP details
+    otpStore.set(otpId, {
+      email,
+      otp,
+      expiresAt,
+      attempts: 0,
+    });
+
+    await sendOtpEmail(email, otp);
+    return res.status(200).json({
+      success: true,
+      message: "OTP sent successfully",
+      otpId, // Send this to the client for the verification step
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ error: "Failed to send OTP" });
+  }
+};
+// Verify OTP
+export const verifyOtp = async (req: Request, res: Response) => {
+  try {
+    const { otpId, otp } = req.body;
+
+    if (!otpId || !otp) {
+      return res.status(400).json({ error: "OTP ID and OTP are required" });
+    }
+
+    const storedOtp = otpStore.get(otpId);
+
+    if (!storedOtp) {
+      return res.status(400).json({ error: "Invalid OTP ID" });
+    }
+
+    if (storedOtp.otp !== otp) {
+      storedOtp.attempts += 1;
+
+      if (storedOtp.attempts >= 3) {
+        otpStore.delete(otpId);
+        return res.status(400).json({ error: "OTP expired or invalid" });
+      }
+
+      return res.status(400).json({ error: "Invalid OTP" });
+    }
+    otpStore.delete(otpId);
+    const update = await prisma.user.update({
+      where: { email: storedOtp.email },
+      data: { password: await bcrypt.hash(otp, 10) }, // For demo, using OTP as new password
+    });
+    await sendPasswordResetSuccessEmail(storedOtp.email);
+    return res
+      .status(200)
+      .json({ success: true, message: "OTP verified successfully" });
+  } catch (error) {
+    return res.status(500).json({ error: "Failed to verify OTP" });
+  }
+};
+//  Change Password based on old passsword
+export const changePassword = async (req: Request, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const { old_password, new_password } = req.body;
+    if (!old_password || !new_password) {
+      return res
+        .status(400)
+        .json({ message: "Old and New Password are required" });
+    }
+    if (old_password === new_password) {
+      return res
+        .status(400)
+        .json({ message: "Old and New Password cannot be same" });
+    }
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.userId },
+    });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    const isMatch = await bcrypt.compare(old_password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ message: "Old password is incorrect" });
+    }
+    const hashedNewPassword = await bcrypt.hash(new_password, 10);
+    await prisma.user.update({
+      where: { id: req.user.userId },
+      data: { password: hashedNewPassword },
+    });
+    return res.status(200).json({ message: "Password changed successfully" });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Something went wrong" });
   }
 };
