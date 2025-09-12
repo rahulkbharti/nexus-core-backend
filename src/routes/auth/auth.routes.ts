@@ -26,8 +26,8 @@ router.use("/member", memberRouter); // Member routes
 router.use("/group", authMiddleware, adminMiddleware, groupRouter); // Group routes // Only Admin
 router.use("/org", authMiddleware, adminMiddleware, orgRouter); // Organization routes // Only Admin
 
-router.post("/:role/login", login); // Login route
-router.post("/:role/refresh", refreshToken); // Refresh route
+router.post("/login", login); // Login route
+router.post("/refresh", refreshToken); // Refresh route
 router.post(
   "/permissions/update-permissions",
   authMiddleware,

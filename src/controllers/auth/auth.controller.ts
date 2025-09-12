@@ -12,6 +12,7 @@ import {
   sendOtpEmail,
   sendPasswordResetSuccessEmail,
 } from "../../services/emailService";
+import { admin } from "googleapis/build/src/apis/admin";
 
 // Only for Staff USER ID
 const get_permissions = async (userId: number) => {
@@ -40,12 +41,12 @@ export const login = async (req: Request, res: Response) => {
     const { email, password } = req.body;
     const user = await prisma.user.findUnique({
       where: { email },
-      include: { [role]: true },
+      include: { admin: true, staff: true, member: true },
     });
-
-    if (!user || !user[role]) {
+    if (!user || (user.member && user.staff && user.admin)) {
       return res.status(404).json({ message: "User Not Found" });
     }
+
     const isValid = await bcrypt.compare(password, user.password);
     if (!isValid) {
       return res.status(401).json({ message: "Invalid Credentials" });
@@ -53,18 +54,18 @@ export const login = async (req: Request, res: Response) => {
 
     const { password: _, ...safeUserData } = user;
     let permissions: string[] = [];
-    const userId: number = (user[role] as { userId?: number })?.userId ?? 0;
-    if (role === "staff") {
-      const staffUser = user[role] as { userId?: number };
+    const userId: number = (user.role as { userId?: number })?.userId ?? 0;
+    if (role === "STAFF") {
+      const staffUser = user.role as { userId?: number };
       if (staffUser && staffUser.userId) {
         permissions = Array.from(await get_permissions(staffUser.userId));
       }
     }
     let organizationId: number = 0;
-    if (role === "staff" || role == "member") {
+    if (role === "STAFF" || role == "MEMBER") {
       organizationId =
-        (user[role] as { organizationId?: number })?.organizationId || 0;
-    } else if (role === "admin") {
+        (user.role as { organizationId?: number })?.organizationId || 0;
+    } else if (role === "ADMIN") {
       const _organizationId = await prisma.organization.findFirst({
         where: { adminUserId: userId },
         select: { id: true },
@@ -79,6 +80,7 @@ export const login = async (req: Request, res: Response) => {
       organizationId,
       permissions_updated_at: Date.now(),
     });
+    // Remove unrelated role data from user object
     const tokenObj = {
       accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken,
