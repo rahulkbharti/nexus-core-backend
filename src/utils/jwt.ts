@@ -15,6 +15,7 @@ export const createAccessToken = (payload: {
   permissions: string[];
   role: string;
   organizationId: number;
+  permissions_updated_at: number;
 }): string => {
   if (!accessTokenSecret || !accessTokenExpiresIn) {
     console.error(
@@ -35,6 +36,7 @@ export const createRefreshToken = (payload: {
   permissions: string[];
   role: string;
   organizationId: number;
+  permissions_updated_at: number;
 }): string => {
   if (!refreshTokenSecret || !refreshTokenExpiresIn) {
     console.error(
@@ -85,6 +87,7 @@ const createTokens = (payload: {
   permissions: string[];
   role: string;
   organizationId: number;
+  permissions_updated_at: number;
 }) => {
   const accessToken = createAccessToken(payload);
   const refreshToken = createRefreshToken(payload);

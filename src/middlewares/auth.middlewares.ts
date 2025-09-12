@@ -27,7 +27,17 @@ export const authMiddleware = async (
     const userData = await verifyAccessToken(token);
     if (userData) {
       req.user = userData;
-      // console.log("User Data in Middleware:", req.user);
+      if (req.user && req.user.permissions_updated_at) {
+        const checkForUpdate = await redis.get(
+          `permissions_updated_at:${req.user.organizationId}`
+        );
+        if (
+          checkForUpdate &&
+          parseInt(checkForUpdate) > req.user.permissions_updated_at
+        ) {
+          return res.status(401).json({ message: "Permissions Updated" });
+        }
+      }
       next();
     } else {
       // console.timeEnd("Auth Middleware Execution Time");
@@ -39,16 +49,16 @@ export const authMiddleware = async (
   }
 };
 
-export function checkPermissions(
+export const checkPermissions = (
   required: string[],
   permissions: string[]
-): { granted: boolean; missing: string[] } {
+): { granted: boolean; missing: string[] } => {
   const missing = required.filter((perm) => !permissions.includes(perm));
   return {
     granted: missing.length === 0,
     missing,
   };
-}
+};
 
 export const authorization = (required_permissions: string[]) => {
   return async (req: Request, res: Response, next: NextFunction) => {

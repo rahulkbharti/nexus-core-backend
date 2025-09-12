@@ -77,6 +77,7 @@ export const login = async (req: Request, res: Response) => {
       permissions,
       role: user.role,
       organizationId,
+      permissions_updated_at: Date.now(),
     });
     const tokenObj = {
       accessToken: tokens.accessToken,
@@ -139,7 +140,6 @@ export const logout = async (req: Request, res: Response) => {
 // Refresh token
 export const refreshToken = async (req: Request, res: Response) => {
   try {
-    const { role } = req.params;
     const { refreshToken } = req.body;
     if (!refreshToken) {
       return res.status(400).json({ message: "Refresh Token is required" });
@@ -160,6 +160,7 @@ export const refreshToken = async (req: Request, res: Response) => {
         role: decoded.role,
         permissions,
         organizationId: decoded.organizationId,
+        permissions_updated_at: Date.now(),
       });
       return res
         .status(200)
@@ -193,7 +194,11 @@ export const updatePermissions = async (req: Request, res: Response) => {
       include: { directPermissions: true },
     });
     // I should I have to revoke all access tokens of this user
-    res.status(200).json({ message: "Permissions Updated", update });
+    await redis.set(
+      `permissions_updated_at:${req.user.organizationId}`,
+      Date.now().toString()
+    );
+    return res.status(200).json({ message: "Permissions Updated", update });
   } catch (e) {
     console.log(e);
     res.status(500).json({ message: "Something Went Wrong" });
