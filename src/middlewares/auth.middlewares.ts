@@ -32,10 +32,13 @@ export const authMiddleware = async (
           `permissions_updated_at:${req.user.organizationId}`
         );
         if (
+          req.user.role !== "ADMIN" &&
           checkForUpdate &&
           parseInt(checkForUpdate) > req.user.permissions_updated_at
         ) {
-          return res.status(401).json({ message: "Permissions Updated" });
+          return res
+            .status(401)
+            .json({ message: "Permissions Updated : Login Again" });
         }
       }
       next();

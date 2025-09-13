@@ -18,17 +18,17 @@ datasource db {
 // Organizational Models
 // BUSINESS LOGIC : If Someone have to create or register organization send request to admin
 model Organization {
-  id          Int          @id @default(autoincrement())
+  id          Int         @id @default(autoincrement())
   name        String
   address     String?
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  default     Boolean      @default(false)
-  adminUserId Int?
-  Admin       Admin?       @relation(fields: [adminUserId], references: [userId])
-  Member      Member[]
-  Staff       Staff[]
-  StaffGroup  StaffGroup[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  default     Boolean     @default(false)
+  adminUserId Int
+  admin       Admin       @relation(fields: [adminUserId], references: [userId])
+  member      Member[]
+  staff       Staff[]
+  staffRole   StaffRole[]
 }
 
 // AUTHENTICATION AND AUTHORIZATION MODELS
@@ -44,6 +44,8 @@ model User {
   admin     Admin?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([email, name])
 }
 
 model Member {
@@ -54,13 +56,13 @@ model Member {
 }
 
 model Staff {
-  userId            Int           @id @default(autoincrement())
-  groupId           Int
-  organizationId    Int
-  user              User          @relation(fields: [userId], references: [id])
-  group             StaffGroup    @relation(fields: [groupId], references: [id])
-  directPermissions Permission[]  @relation("UserPermissions")
-  Organization      Organization? @relation(fields: [organizationId], references: [id])
+  userId         Int           @id @default(autoincrement())
+  roleId         Int
+  organizationId Int
+  user           User          @relation(fields: [userId], references: [id])
+  role           StaffRole     @relation(fields: [roleId], references: [id])
+  permissions    Permission[]  @relation("UserPermissions")
+  Organization   Organization? @relation(fields: [organizationId], references: [id])
 }
 
 model Admin {
@@ -70,24 +72,24 @@ model Admin {
   organizations Organization[]
 }
 
-model StaffGroup {
+model StaffRole {
   id             Int          @id @default(autoincrement())
   name           String
   organizationId Int
-  permissions    Permission[] @relation("StaffGroupPermissions")
+  permissions    Permission[] @relation("StaffRolePermissions")
   staff          Staff[]
   organization   Organization @relation(fields: [organizationId], references: [id])
 
-  @@unique([name, organizationId])
+  // @@unique([name, organizationId])
   @@index([name])
 }
 
 model Permission {
-  id          Int          @id @default(autoincrement())
-  name        String       @unique
+  id          Int         @id @default(autoincrement())
+  name        String      @unique
   description String?
-  staffGroups StaffGroup[] @relation("StaffGroupPermissions")
-  staffs      Staff[]      @relation("UserPermissions") // direct user permissions
+  staffRole   StaffRole[] @relation("StaffRolePermissions")
+  staffs      Staff[]     @relation("UserPermissions") // direct user permissions
 }
 
 enum Role {

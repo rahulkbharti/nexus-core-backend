@@ -3,7 +3,7 @@ import express, { Router } from "express";
 import adminRouter from "./users/admin.routes";
 import staffRouter from "./users/staff.routes";
 import memberRouter from "./users/member.routes";
-import groupRouter from "./group.routes";
+import roleRouter from "./role.routes";
 import orgRouter from "./org.routes";
 import {
   changePassword,
@@ -23,7 +23,7 @@ const router: Router = express.Router();
 router.use("/admin", superAdminMiddleware, adminRouter); // Admin routes
 router.use("/staff", authMiddleware, adminMiddleware, staffRouter); // Staff routes
 router.use("/member", memberRouter); // Member routes
-router.use("/group", authMiddleware, adminMiddleware, groupRouter); // Group routes // Only Admin
+router.use("/role", authMiddleware, adminMiddleware, roleRouter); // Role routes // Only Admin
 router.use("/org", authMiddleware, adminMiddleware, orgRouter); // Organization routes // Only Admin
 
 router.post("/login", login); // Login route

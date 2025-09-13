@@ -10,11 +10,11 @@ export const registerStaff = async (req: Request, res: Response) => {
     if (!req.user) {
       return res.status(401).json({ message: "Unauthorized" });
     }
-    const { email, password, name, groupId = 0 } = req.body;
+    const { email, password, name, roleId = 0 } = req.body;
     const hashedPassword = bcrypt.hashSync(password, 10);
     const staff = await prisma.staff.create({
       data: {
-        group: { connect: { id: groupId } },
+        role: { connect: { id: roleId } },
         Organization: { connect: { id: req.user.organizationId } },
         user: {
           create: {
@@ -42,7 +42,7 @@ export const registerStaff = async (req: Request, res: Response) => {
       if ((error as any).code === "P2025") {
         res.status(404).json({
           message:
-            "Related record not found { check groupId and organizationID }",
+            "Related record not found { check roleId and organizationID }",
         });
         return;
       }
@@ -144,14 +144,14 @@ export const updateStaff = async (req: Request, res: Response) => {
       return res.status(401).json({ message: "Unauthorized" });
     }
     const { userId } = req.params;
-    const { name, email, groupId } = req.body;
+    const { name, email, roleId } = req.body;
     const staff = await prisma.staff.update({
       where: {
         userId: Number(userId),
         organizationId: req.user.organizationId,
       },
       data: {
-        group: groupId ? { connect: { id: groupId } } : undefined,
+        role: roleId ? { connect: { id: roleId } } : undefined,
         user: {
           update: {
             name: name,

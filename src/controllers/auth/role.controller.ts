@@ -1,27 +1,28 @@
 import type { Request, Response } from "express";
 import prisma from "../../utils/prisma";
 
-// Create Group
-export const groupCreate = async (req: Request, res: Response) => {
+// Create Role
+export const createRole = async (req: Request, res: Response) => {
   try {
     if (!req.user) {
       return res.status(401).json({ message: "Unauthorized" });
     }
     const { name } = req.body;
-    const group = await prisma.staffGroup.create({
+    console.log(req.user.organizationId, name);
+    const role = await prisma.staffRole.create({
       data: {
         name,
         organizationId: req.user.organizationId,
       },
     });
-    return res.status(201).json({ message: "Group Created", group });
+    return res.status(201).json({ message: "role Created", role });
   } catch (e) {
     console.error(e);
     return res.status(500).json({ message: "Server Internal Error" });
   }
 };
-//Get All Groups
-export const getGroups = async (req: Request, res: Response) => {
+//Get All Roles
+export const getRoles = async (req: Request, res: Response) => {
   try {
     if (!req.user) {
       return res.status(401).json({ message: "Unauthorized" });
@@ -30,19 +31,19 @@ export const getGroups = async (req: Request, res: Response) => {
     const pageNumber = parseInt(page as string, 10);
     const limitNumber = parseInt(limit as string, 10);
 
-    const [groups, total] = await Promise.all([
-      prisma.staffGroup.findMany({
+    const [roles, total] = await Promise.all([
+      prisma.staffRole.findMany({
         skip: (pageNumber - 1) * limitNumber,
         take: limitNumber,
         where: { organizationId: req.user.organizationId },
       }),
-      prisma.staffGroup.count({
+      prisma.staffRole.count({
         where: { organizationId: req.user.organizationId },
       }),
     ]);
 
     return res.status(200).json({
-      data: groups,
+      data: roles,
       page: pageNumber,
       limit: limitNumber,
       total: total,
@@ -53,75 +54,73 @@ export const getGroups = async (req: Request, res: Response) => {
     return res.status(500).json({ message: "Somthing Went Wrong" });
   }
 };
-// Get Group by id
-export const getGroupById = async (req: Request, res: Response) => {
+// Get Role by id
+export const getRoleById = async (req: Request, res: Response) => {
   try {
     if (!req.user) {
       return res.status(401).json({ message: "Unauthorized" });
     }
     const { id } = req.params;
-    const group = await prisma.staffGroup.findFirst({
+    const role = await prisma.staffRole.findFirst({
       where: {
         id: Number(id),
         organizationId: req.user.organizationId,
       },
     });
-    if (!group) {
-      return res.status(404).json({ message: "Group not found" });
+    if (!role) {
+      return res.status(404).json({ message: "role not found" });
     }
-    return res.status(200).json({ group });
+    return res.status(200).json({ role });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Server Internal Error" });
   }
 };
 
-// Update Group
-export const updateGroup = async (req: Request, res: Response) => {
+// Update Role
+export const updateRole = async (req: Request, res: Response) => {
   try {
     if (!req.user) {
       return res.status(401).json({ message: "Unauthorized" });
     }
     const { id } = req.params;
     const { name } = req.body;
-    const group = await prisma.staffGroup.updateMany({
+    const role = await prisma.staffRole.updateMany({
       where: {
         id: Number(id),
         organizationId: req.user.organizationId,
       },
       data: { name },
     });
-    if (group.count === 0) {
-      return res
-        .status(404)
-        .json({ message: "Group not found or not updated" });
+    if (role.count === 0) {
+      return res.status(404).json({ message: "Role not found or not updated" });
     }
-    return res.status(200).json({ message: "Group updated" });
+    return res.status(200).json({ message: "Role updated" });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Server Internal Error" });
   }
 };
 
-// Delete Group
-export const deleteGroup = async (req: Request, res: Response) => {
+// Delete Role
+export const deleteRole = async (req: Request, res: Response) => {
   try {
     if (!req.user) {
       return res.status(401).json({ message: "Unauthorized" });
     }
     const { id } = req.params;
-    const group = await prisma.staffGroup.deleteMany({
+    const role = await prisma.staffRole.deleteMany({
       where: {
         id: Number(id),
         organizationId: req.user.organizationId,
       },
     });
-    if (group.count === 0) {
+    if (role.count === 0) {
       return res
         .status(404)
-        .json({ message: "Group not found or not deleted" });
+        .json({ message: "Role not found or not deleted" });
     }
-    return res.status(200).json({ message: "Group deleted" });
+    return res.status(200).json({ message: "Role deleted" });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Server Internal Error" });

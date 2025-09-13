@@ -19,16 +19,14 @@ const get_permissions = async (userId: number) => {
   const directPermissions = await prisma.staff.findUnique({
     where: { userId },
     include: {
-      directPermissions: true,
-      group: { select: { permissions: true } },
+      permissions: true,
+      role: { select: { permissions: true } },
     },
   });
   const permissions = new Set<string>();
   if (directPermissions) {
-    directPermissions.directPermissions.forEach((perm) =>
-      permissions.add(perm.name)
-    );
-    directPermissions.group?.permissions.forEach((perm) =>
+    directPermissions.permissions.forEach((perm) => permissions.add(perm.name));
+    directPermissions.role?.permissions.forEach((perm) =>
       permissions.add(perm.name)
     );
   }
@@ -37,7 +35,7 @@ const get_permissions = async (userId: number) => {
 // Login For Any User
 export const login = async (req: Request, res: Response) => {
   try {
-    const { role } = req.params;
+    // const { role } = req.params;
     const { email, password } = req.body;
     const user = await prisma.user.findUnique({
       where: { email },
@@ -55,21 +53,23 @@ export const login = async (req: Request, res: Response) => {
     const { password: _, ...safeUserData } = user;
     let permissions: string[] = [];
     const userId: number = (user.role as { userId?: number })?.userId ?? 0;
-    if (role === "STAFF") {
+    if (user.role === "STAFF") {
       const staffUser = user.role as { userId?: number };
       if (staffUser && staffUser.userId) {
         permissions = Array.from(await get_permissions(staffUser.userId));
       }
     }
     let organizationId: number = 0;
-    if (role === "STAFF" || role == "MEMBER") {
+    // console.log("User Role:", user.role);
+    if (user.role === "STAFF" || user.role == "MEMBER") {
       organizationId =
         (user.role as { organizationId?: number })?.organizationId || 0;
-    } else if (role === "ADMIN") {
+    } else if (user.role === "ADMIN") {
       const _organizationId = await prisma.organization.findFirst({
-        where: { adminUserId: userId },
+        where: { adminUserId: user.admin?.userId },
         select: { id: true },
       });
+      // console.log("Organization ID:", _organizationId);
       organizationId = _organizationId?.id || 0;
     }
     const tokens = createTokens({
@@ -180,20 +180,22 @@ export const updatePermissions = async (req: Request, res: Response) => {
     if (!req.user) {
       return res.status(401).json({ message: "Unauthorized" });
     }
+    console.log("req.user.role:", req.user.role);
     const { update_permissions, userId } = req.body;
-    if (!req.user || req.user.role !== "ADMIN" || !req.user.userId) {
+    if (!req.user || req.user.role !== "ADMIN") {
       return res
         .status(401)
         .json({ message: "Staff Are Not Allowed To Update Permissions" });
     }
+    console.log("Updating permissions for userId:", update_permissions);
     const update = await prisma.staff.update({
       where: { userId, organizationId: req.user.organizationId },
       data: {
-        directPermissions: {
+        permissions: {
           set: update_permissions,
         },
       },
-      include: { directPermissions: true },
+      include: { permissions: true },
     });
     // I should I have to revoke all access tokens of this user
     await redis.set(
