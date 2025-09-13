@@ -52,7 +52,9 @@ export const login = async (req: Request, res: Response) => {
 
     const { password: _, ...safeUserData } = user;
     let permissions: string[] = [];
-    const userId: number = (user.role as { userId?: number })?.userId ?? 0;
+    const userId: number =
+      (user.admin || user.staff || (user.member as { userId?: number }))
+        ?.userId ?? 0;
     if (user.role === "STAFF") {
       const staffUser = user.role as { userId?: number };
       if (staffUser && staffUser.userId) {
