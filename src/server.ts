@@ -15,16 +15,16 @@ app.use(express.json());
 app.use(requestLogger);
 app.set("trust proxy", 1);
 // This will allow 100 requests per 15 minutes from a single IP.
-app.use(
-  rateLimit({
-    windowMs:
-      parseInt(process.env.REQUEST_LIMITER_WINDOW_MS || "1") * 60 * 1000,
-    max: parseInt(process.env.REQUEST_LIMITER_MAX || "10"),
-    message: "Too many requests, please try again later.",
-    standardHeaders: true,
-    legacyHeaders: false,
-  })
-);
+// app.use(
+//   rateLimit({
+//     windowMs:
+//       parseInt(process.env.REQUEST_LIMITER_WINDOW_MS || "1") * 60 * 1000,
+//     max: parseInt(process.env.REQUEST_LIMITER_MAX || "10"),
+//     message: "Too many requests, please try again later.",
+//     standardHeaders: true,
+//     legacyHeaders: false,
+//   })
+// );
 
 app.use("/api", mainRouter);
 

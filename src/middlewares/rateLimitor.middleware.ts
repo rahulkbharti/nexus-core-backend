@@ -18,7 +18,7 @@ const rateLimiter = ({ windowMs, max }: RateLimiterOptions = {}) => {
   const maxRequests = max || 100; // 100 requests
 
   return (req: Request, res: Response, next: NextFunction) => {
-    console.log(req.user);
+    // console.log(req.user);
     // Use req.ip to identify the client. Ensure your server is configured to correctly handle proxies if needed.
     // console.log(windowMilliseconds, maxRequests);
     let ip = req.ip || "";

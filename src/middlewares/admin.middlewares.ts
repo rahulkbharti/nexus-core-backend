@@ -17,7 +17,7 @@ const adminMiddleware = (req: Request, res: Response, next: NextFunction) => {
   if (!req.user) {
     return res.status(401).json({ message: "Unauthorized" });
   }
-  console.log(req.user);
+  // console.log(req.user);
   if (req.user && req.user.role === "ADMIN") {
     next();
   } else {

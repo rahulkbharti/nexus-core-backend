@@ -7,11 +7,13 @@ import roleRouter from "./role.routes";
 import orgRouter from "./org.routes";
 import {
   changePassword,
+  GetPermissions,
   login,
   logout,
   refreshToken,
   sendOtp,
-  updatePermissions,
+  updateRolePermissions,
+  updateStaffPermissions,
   verifyOtp,
 } from "../../controllers/auth/auth.controller";
 import { authMiddleware } from "../../middlewares/auth.middlewares";
@@ -28,10 +30,17 @@ router.use("/org", authMiddleware, adminMiddleware, orgRouter); // Organization 
 
 router.post("/login", login); // Login route
 router.post("/refresh", refreshToken); // Refresh route
+
+router.get("/permissions", authMiddleware, GetPermissions);
 router.post(
   "/permissions/update-permissions",
   authMiddleware,
-  updatePermissions
+  updateStaffPermissions
+); // Update Permissions route
+router.post(
+  "/permissions/update-permissions-role",
+  authMiddleware,
+  updateRolePermissions
 ); // Update Permissions route
 router.post("/logout", logout); // Logout route
 

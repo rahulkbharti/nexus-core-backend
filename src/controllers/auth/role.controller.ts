@@ -7,13 +7,23 @@ export const createRole = async (req: Request, res: Response) => {
     if (!req.user) {
       return res.status(401).json({ message: "Unauthorized" });
     }
-    const { name } = req.body;
-    console.log(req.user.organizationId, name);
+    const { name, permissions: _permissions } = req.body;
+
+    const permissionIds = _permissions.map((p: any) =>
+      typeof p === "number" ? p : p.id
+    );
+
+    // console.log("Processed permission IDs:", permissionIds);
+
     const role = await prisma.staffRole.create({
       data: {
         name,
         organizationId: req.user.organizationId,
+        permissions: {
+          connect: permissionIds.map((id: number) => ({ id })),
+        },
       },
+      include: { permissions: true },
     });
     return res.status(201).json({ message: "role Created", role });
   } catch (e) {
@@ -35,6 +45,7 @@ export const getRoles = async (req: Request, res: Response) => {
       prisma.staffRole.findMany({
         skip: (pageNumber - 1) * limitNumber,
         take: limitNumber,
+        include: { permissions: true },
         where: { organizationId: req.user.organizationId },
       }),
       prisma.staffRole.count({
@@ -84,18 +95,25 @@ export const updateRole = async (req: Request, res: Response) => {
       return res.status(401).json({ message: "Unauthorized" });
     }
     const { id } = req.params;
-    const { name } = req.body;
-    const role = await prisma.staffRole.updateMany({
+    const { name, permissions: _permissions } = req.body;
+    const permissionIds = _permissions.map((p: any) =>
+      typeof p === "number" ? p : p.id
+    );
+
+    const role = await prisma.staffRole.update({
       where: {
         id: Number(id),
         organizationId: req.user.organizationId,
       },
-      data: { name },
+      data: {
+        name,
+        permissions: {
+          set: permissionIds.map((id: number) => ({ id })),
+        },
+      },
     });
-    if (role.count === 0) {
-      return res.status(404).json({ message: "Role not found or not updated" });
-    }
-    return res.status(200).json({ message: "Role updated" });
+
+    return res.status(200).json({ message: "Role updated", role });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Server Internal Error" });
@@ -116,9 +134,7 @@ export const deleteRole = async (req: Request, res: Response) => {
       },
     });
     if (role.count === 0) {
-      return res
-        .status(404)
-        .json({ message: "Role not found or not deleted" });
+      return res.status(404).json({ message: "Role not found or not deleted" });
     }
     return res.status(200).json({ message: "Role deleted" });
   } catch (error) {

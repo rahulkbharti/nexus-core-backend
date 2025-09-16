@@ -176,8 +176,26 @@ export const refreshToken = async (req: Request, res: Response) => {
     return res.status(500).json({ message: "Something Went Wrong" });
   }
 };
+
+//
+export const GetPermissions = async (req: Request, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const permissions = await prisma.permission.findMany({});
+    return res.status(200).json({
+      message: "Permissions fetched",
+      permissions: Array.from(permissions),
+    });
+  } catch (e) {
+    console.log(e);
+    return res.status(500).json({ message: "Something Went Wrong" });
+  }
+};
+
 // Update Permission
-export const updatePermissions = async (req: Request, res: Response) => {
+export const updateStaffPermissions = async (req: Request, res: Response) => {
   try {
     if (!req.user) {
       return res.status(401).json({ message: "Unauthorized" });
@@ -206,6 +224,48 @@ export const updatePermissions = async (req: Request, res: Response) => {
     );
     return res.status(200).json({ message: "Permissions Updated", update });
   } catch (e) {
+    console.log(e);
+    res.status(500).json({ message: "Something Went Wrong" });
+  }
+};
+export const updateRolePermissions = async (req: Request, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    console.log("req.user.role:", req.user.role);
+    const { update_permissions, roleId } = req.body;
+    if (!req.user || req.user.role !== "ADMIN") {
+      return res
+        .status(401)
+        .json({ message: "Staff Are Not Allowed To Update Permissions" });
+    }
+    // console.log("Updating permissions for roleId:", update_permissions, roleId);
+    const update = await prisma.staffRole.update({
+      where: { id: roleId, organizationId: req.user.organizationId },
+      data: {
+        permissions: {
+          set: update_permissions,
+        },
+      },
+      include: { permissions: true },
+    });
+    // console.log("Updated role:", update);
+    // I should I have to revoke all access tokens of this user
+    await redis.set(
+      `permissions_updated_at:${req.user.organizationId}`,
+      Date.now().toString()
+    );
+    return res.status(200).json({ message: "Permissions Updated", update });
+  } catch (e) {
+    if (
+      typeof e === "object" &&
+      e !== null &&
+      "code" in e &&
+      (e as any).code === "P2025"
+    ) {
+      return res.status(404).json({ message: "Role/Permission not found" });
+    }
     console.log(e);
     res.status(500).json({ message: "Something Went Wrong" });
   }
@@ -311,7 +371,7 @@ export const changePassword = async (req: Request, res: Response) => {
         .json({ message: "Old and New Password cannot be same" });
     }
     const user = await prisma.user.findUnique({
-      where: { id: req.user.userId },
+      where: { id: req.user.roleId },
     });
     if (!user) {
       return res.status(404).json({ message: "User not found" });

@@ -57,16 +57,20 @@ export const getStaffs = async (req: Request, res: Response) => {
     if (!req.user) {
       return res.status(401).json({ message: "Unauthorized" });
     }
-    const { page = "1", limit = "10" } = req.query;
+    const { page = "1", limit = "10", role = "0" } = req.query;
     const pageNumber = parseInt(page as string, 10);
     const limitNumber = parseInt(limit as string, 10);
+    const roleNumber = parseInt(role as string, 10);
 
     const [staffs, total] = await Promise.all([
       prisma.staff.findMany({
         skip: (pageNumber - 1) * limitNumber,
         take: limitNumber,
         include: { user: { omit: { password: true } } },
-        where: { organizationId: req.user.organizationId },
+        where: {
+          organizationId: req.user.organizationId,
+          ...(roleNumber && roleNumber !== 0 ? { roleId: roleNumber } : {}),
+        },
       }),
       prisma.staff.count({
         where: { organizationId: req.user.organizationId },
