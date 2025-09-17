@@ -11,7 +11,7 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",
+  "description": "Multi-Tenant Library ERP Platform Backend API in Nodejs with Express and TypeScript",
   "dependencies": {
     "@prisma/client": "^6.15.0",
     "@types/dotenv": "^6.1.1",

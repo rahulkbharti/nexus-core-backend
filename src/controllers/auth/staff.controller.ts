@@ -73,7 +73,10 @@ export const getStaffs = async (req: Request, res: Response) => {
         },
       }),
       prisma.staff.count({
-        where: { organizationId: req.user.organizationId },
+        where: {
+          organizationId: req.user.organizationId,
+          ...(roleNumber && roleNumber !== 0 ? { roleId: roleNumber } : {}),
+        },
       }),
     ]);
     // console.timeEnd("Auth Middleware Execution Time");

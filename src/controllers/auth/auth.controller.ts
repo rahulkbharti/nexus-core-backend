@@ -13,6 +13,7 @@ import {
   sendPasswordResetSuccessEmail,
 } from "../../services/emailService";
 import { admin } from "googleapis/build/src/apis/admin";
+import { Organization } from "../../generated/prisma";
 
 // Only for Staff USER ID
 const get_permissions = async (userId: number) => {
@@ -35,13 +36,21 @@ const get_permissions = async (userId: number) => {
 // Login For Any User
 export const login = async (req: Request, res: Response) => {
   try {
-    // const { role } = req.params;
     const { email, password } = req.body;
+
+    // #1: EFFICIENT DATA FETCHING
+    // Fetch the user and all potentially related roles and their organizations in a single query.
+    // This avoids extra database calls later.
     const user = await prisma.user.findUnique({
       where: { email },
-      include: { admin: true, staff: true, member: true },
+      include: {
+        admin: { include: { organizations: true } }, // Include org linked to admin
+        staff: { include: { Organization: true } }, // Include org linked to staff
+        member: { include: { Organization: true } }, // Include org linked to member
+      },
     });
-    if (!user || (user.member && user.staff && user.admin)) {
+
+    if (!user) {
       return res.status(404).json({ message: "User Not Found" });
     }
 
@@ -50,48 +59,61 @@ export const login = async (req: Request, res: Response) => {
       return res.status(401).json({ message: "Invalid Credentials" });
     }
 
-    const { password: _, ...safeUserData } = user;
+    // #2: SIMPLIFIED & TYPE-SAFE LOGIC
+    // Use a switch statement for cleaner, more readable role-based logic.
     let permissions: string[] = [];
-    const userId: number =
-      (user.admin || user.staff || (user.member as { userId?: number }))
-        ?.userId ?? 0;
-    if (user.role === "STAFF") {
-      const staffUser = user.role as { userId?: number };
-      if (staffUser && staffUser.userId) {
-        permissions = Array.from(await get_permissions(staffUser.userId));
-      }
+    let organization: Organization | null = null;
+
+    switch (user.role) {
+      case "ADMIN":
+        // Access the nested organization object directly.
+        organization = user.admin?.organizations[0] ?? null;
+        break;
+
+      case "STAFF":
+        organization = user.staff?.Organization ?? null;
+        // The original user object already has the id, no need for complex access.
+        permissions = Array.from(await get_permissions(user.id));
+        break;
+
+      case "MEMBER":
+        organization = user.member?.Organization ?? null;
+        break;
+
+      default:
+        // Handle unexpected roles gracefully
+        return res.status(403).json({ message: "User role is not configured" });
     }
-    let organizationId: number = 0;
-    // console.log("User Role:", user.role);
-    if (user.role === "STAFF" || user.role == "MEMBER") {
-      organizationId =
-        (user.role as { organizationId?: number })?.organizationId || 0;
-    } else if (user.role === "ADMIN") {
-      const _organizationId = await prisma.organization.findFirst({
-        where: { adminUserId: user.admin?.userId },
-        select: { id: true },
-      });
-      // console.log("Organization ID:", _organizationId);
-      organizationId = _organizationId?.id || 0;
-    }
+
+    // #3: CREATE JWT PAYLOAD
+    // The JWT payload should be lean. Only include essential identifiers.
     const tokens = createTokens({
-      userId: userId,
+      userId: user.id, // Direct and simple
       email: user.email,
       permissions,
       role: user.role,
-      organizationId,
+      organizationId: organization?.id ?? 0,
       permissions_updated_at: Date.now(),
     });
-    // Remove unrelated role data from user object
+
+    // #4: PREPARE THE RESPONSE OBJECT
+    // Remove the password and other sensitive or redundant data before sending.
+    const { password: _, admin, staff, member, ...safeUserData } = user;
+
     const tokenObj = {
       accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken,
-      user: { ...safeUserData, permissions },
+      user: {
+        ...safeUserData,
+        permissions,
+        organization, // Include the full organization object here
+      },
     };
+
     return res.status(200).json({ message: "Login Successful", tokenObj });
   } catch (e) {
     console.log(e);
-    return res.status(500).json({ message: "Somthing Went Wrong" });
+    return res.status(500).json({ message: "Something Went Wrong" });
   }
 };
 // Logout for any User

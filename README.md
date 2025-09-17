@@ -1,3 +1,29 @@
+# Featues
+
+- Multi-Tenant Support
+- User Authentication and Authorization
+- Book Management (CRUD Operations)
+- Member Management
+- Loan Management
+- Reservation System
+- Notification System
+- Reporting and Analytics
+- Email for Forget Password and Notifications
+
+# Tech Stack
+
+- Node.js with Express
+- TypeScript
+- Prisma ORM
+- PostgreSQL
+- Redis for Caching
+- JWT for Authentication
+- Google OAuth 2.0 for Social Login
+- RBAC with Custom Pernsonal Permissions for Staff
+- Rate Limiting with express-rate-limit
+- Logger with morgan
+- Docker for Containerization
+
 # Getting Started
 
 1. Clone the repository

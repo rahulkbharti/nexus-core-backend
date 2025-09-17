@@ -65,16 +65,23 @@ export const getOrgById = async (req: Request, res: Response) => {
 // Update Organization
 export const updateOrg = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
-    const { name, address, adminUserId } = req.body;
+    if (!req.user) {
+      if (req.user.role !== "ADMIN") {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const { name, address } = req.body;
+    console.log(req.user.organizationId, name, address);
     const org = await prisma.organization.update({
-      where: { id: Number(id) },
-      data: { name, address, adminUserId },
+      where: { id: req.user.organizationId },
+      data: { name, address },
     });
     return res
       .status(200)
       .json({ message: "Organization updated successfully", org });
   } catch (error: unknown) {
+    console.log(error);
     if (error instanceof Error && error.message === "Not Found") {
       return res.status(404).json({ message: "Organization not found" });
     }
