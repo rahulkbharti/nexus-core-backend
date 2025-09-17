@@ -1,0 +1,15 @@
+library-api-nodejs/
+│── src/
+│   ├── config/         # DB, environment configs
+│   ├── controllers/    # Business logic (issueBook, returnBook etc.)
+│   ├── models/         # DB schemas (User, Book, Transaction)
+│   ├── routes/         # API routes
+│   ├── middlewares/    # Auth, error handling
+│   ├── services/       # Extra logic (email, notifications, etc.)
+│   ├── utils/          # Helpers
+│   └── app.js          # Express app init
+│
+│── tests/              # Unit/integration tests
+│── .env.example        # Example env vars
+│── package.json        
+│── README.md

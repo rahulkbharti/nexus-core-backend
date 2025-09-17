@@ -4,9 +4,12 @@ import { Role } from "../../generated/prisma";
 import bcrypt from "bcryptjs";
 // Create Admin
 export const registerAdmin = async (req: Request, res: Response) => {
-  const { email, password, name, superAdmin } = req.body;
+  const { email, password, name, orgName, orgAddress, superAdmin } = req.body;
   const hashedPassword = bcrypt.hashSync(password, 10);
   try {
+    // Generate a random serial number between 100000 and 999999
+    const serialNumber = Math.floor(1000 + Math.random() * 9000);
+
     const admin = await prisma.admin.create({
       data: {
         user: {
@@ -20,8 +23,8 @@ export const registerAdmin = async (req: Request, res: Response) => {
         organizations: {
           create: [
             {
-              name: "Default Organization d",
-              address: "Default Organization",
+              name: orgName || `Organization ${serialNumber}`,
+              address: orgAddress || "Default Address",
             },
           ],
         },

@@ -8,6 +8,7 @@ import orgRouter from "./org.routes";
 import {
   changePassword,
   GetPermissions,
+  googleAuth,
   login,
   logout,
   refreshToken,
@@ -29,6 +30,7 @@ router.use("/role", authMiddleware, adminMiddleware, roleRouter); // Role routes
 router.use("/org", authMiddleware, adminMiddleware, orgRouter); // Organization routes // Only Admin
 
 router.post("/login", login); // Login route
+router.post("/google-login", googleAuth); // Google Login route
 router.post("/refresh", refreshToken); // Refresh route
 
 router.get("/permissions", authMiddleware, GetPermissions);

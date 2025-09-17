@@ -14,6 +14,7 @@ import {
 } from "../../services/emailService";
 import { admin } from "googleapis/build/src/apis/admin";
 import { Organization } from "../../generated/prisma";
+import verifyGoogleToken from "../../services/googleAuthService";
 
 // Only for Staff USER ID
 const get_permissions = async (userId: number) => {
@@ -161,6 +162,77 @@ export const logout = async (req: Request, res: Response) => {
     return res.status(500).json({ message: "Somthing Went Wrong" });
   } finally {
     await prisma.$disconnect();
+  }
+};
+export const googleAuth = async (req: Request, res: Response) => {
+  const { access_token } = req.body;
+  try {
+    const responce: any = await verifyGoogleToken(access_token);
+    // console.log(responce);
+    const user = await prisma.user.findUnique({
+      where: { email: responce.email },
+      include: {
+        admin: { include: { organizations: true } }, // Include org linked to admin
+        staff: { include: { Organization: true } }, // Include org linked to staff
+        member: { include: { Organization: true } }, // Include org linked to member
+      },
+    });
+    if (!user) {
+      return res.status(404).json({ message: "User Not Found" });
+    }
+    let permissions: string[] = [];
+    let organization: Organization | null = null;
+
+    switch (user.role) {
+      case "ADMIN":
+        // Access the nested organization object directly.
+        organization = user.admin?.organizations[0] ?? null;
+        break;
+
+      case "STAFF":
+        organization = user.staff?.Organization ?? null;
+        // The original user object already has the id, no need for complex access.
+        permissions = Array.from(await get_permissions(user.id));
+        break;
+
+      case "MEMBER":
+        organization = user.member?.Organization ?? null;
+        break;
+
+      default:
+        // Handle unexpected roles gracefully
+        return res.status(403).json({ message: "User role is not configured" });
+    }
+
+    // #3: CREATE JWT PAYLOAD
+    // The JWT payload should be lean. Only include essential identifiers.
+    const tokens = createTokens({
+      userId: user.id, // Direct and simple
+      email: user.email,
+      permissions,
+      role: user.role,
+      organizationId: organization?.id ?? 0,
+      permissions_updated_at: Date.now(),
+    });
+
+    // #4: PREPARE THE RESPONSE OBJECT
+    // Remove the password and other sensitive or redundant data before sending.
+    const { password: _, admin, staff, member, ...safeUserData } = user;
+
+    const tokenObj = {
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      user: {
+        ...safeUserData,
+        permissions,
+        organization, // Include the full organization object here
+      },
+    };
+
+    return res.status(200).json({ message: "Login Successful", tokenObj });
+  } catch (e) {
+    console.log(e);
+    return res.status(500).json({ message: "Somthing Went Wrong" });
   }
 };
 // Refresh token
