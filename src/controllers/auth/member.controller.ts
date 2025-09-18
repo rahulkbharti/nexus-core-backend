@@ -2,6 +2,8 @@ import type { Request, Response } from "express";
 import prisma from "../../utils/prisma";
 import { Role } from "../../generated/prisma/index.js";
 import bcrypt from "bcryptjs";
+import generateStrongPassword from "../../utils/passwordGenerator";
+import { sendRegistrationCredential } from "../../services/emailService";
 
 // Create member
 export const registerMember = async (req: Request, res: Response) => {
@@ -9,7 +11,8 @@ export const registerMember = async (req: Request, res: Response) => {
     if (!req.user) {
       return res.status(401).json({ message: "Unauthorized" });
     }
-    const { email, name, password } = req.body;
+    const { email, name } = req.body;
+    const password = generateStrongPassword(8);
     const hashedPassword = bcrypt.hashSync(password, 10);
     const member = await prisma.member.create({
       data: {
@@ -28,7 +31,7 @@ export const registerMember = async (req: Request, res: Response) => {
     const { password: _, ...safeUser } = member.user;
     const safeMember = { ...member, user: safeUser };
     // console.log(safeMember);
-
+    sendRegistrationCredential({ name, email, password });
     return res
       .status(201)
       .json({ message: "Member Registered", member: safeMember });

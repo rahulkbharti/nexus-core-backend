@@ -119,6 +119,29 @@ export const sendPasswordResetSuccessEmail = async (
   return transporter.sendMail(mailOptions);
 };
 
+// Account Creation
+export const sendRegistrationCredential = async ({
+  name,
+  email,
+  password,
+  orgName,
+  orgAddress,
+}: {
+  name: string;
+  email: string;
+  password: string;
+  orgName?: string;
+  orgAddress?: string;
+}) => {
+  console.log(
+    `Congratulations ${name} ${email} you account has beeen successfulyy Created `
+  );
+  console.log(`Organization : ${orgName} , Address : ${orgAddress}`);
+  console.log(
+    `Use this password login first time make sure to upate password ${password}`
+  );
+};
+
 // // Example usage
 // const sendTestEmail = async () => {
 //   try {

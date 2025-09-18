@@ -2,6 +2,8 @@ import type { Request, Response } from "express";
 import prisma from "../../utils/prisma";
 import { Role } from "../../generated/prisma/index.js";
 import bcrypt from "bcryptjs";
+import generateStrongPassword from "../../utils/passwordGenerator";
+import { sendRegistrationCredential } from "../../services/emailService";
 
 // Create Staff
 export const registerStaff = async (req: Request, res: Response) => {
@@ -10,7 +12,8 @@ export const registerStaff = async (req: Request, res: Response) => {
     if (!req.user) {
       return res.status(401).json({ message: "Unauthorized" });
     }
-    const { email, password, name, roleId = 0 } = req.body;
+    const { email, name, roleId = 0 } = req.body;
+    const password = generateStrongPassword(8);
     const hashedPassword = bcrypt.hashSync(password, 10);
     const staff = await prisma.staff.create({
       data: {
@@ -29,6 +32,7 @@ export const registerStaff = async (req: Request, res: Response) => {
     });
     const { password: _, ...safeUser } = staff.user;
     const safeStaff = { ...staff, user: safeUser };
+    sendRegistrationCredential({ name, email, password });
     return res
       .status(201)
       .json({ message: "Staff Registered", staff: safeStaff });
