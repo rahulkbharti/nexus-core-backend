@@ -3,7 +3,7 @@ import prisma from "../../utils/prisma";
 import { Role } from "../../generated/prisma/index.js";
 import bcrypt from "bcryptjs";
 import generateStrongPassword from "../../utils/passwordGenerator";
-import { sendRegistrationCredential } from "../../services/emailService";
+import { welcomeMember, welcomeStaff } from "../../services/authEmailService";
 
 // Create member
 export const registerMember = async (req: Request, res: Response) => {
@@ -30,8 +30,19 @@ export const registerMember = async (req: Request, res: Response) => {
     });
     const { password: _, ...safeUser } = member.user;
     const safeMember = { ...member, user: safeUser };
-    // console.log(safeMember);
-    sendRegistrationCredential({ name, email, password });
+    // Fetch organization details
+    // const org = await prisma.organization.findUnique({
+    //   where: { id: req.user.organizationId },
+    // });
+    // const orgName = org?.name || "Your Organization";
+    // const orgAddress = org?.address || "Organization Address";
+    // // console.log(safeMember);
+    // // console.log({ name, email, password });
+    // welcomeMember({ name, email, orgName, orgAddress, password }).catch(
+    //   (err) => {
+    //     console.error("Failed to send welcome email:", err);
+    //   }
+    // );
     return res
       .status(201)
       .json({ message: "Member Registered", member: safeMember });

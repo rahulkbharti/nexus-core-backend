@@ -38,7 +38,7 @@ const sendEmail = async ({
 }: {
   to: string;
   subject: string;
-  text: string;
+  text?: string;
   html: string;
 }): Promise<object> => {
   try {
@@ -61,104 +61,5 @@ const sendEmail = async ({
     return { error }; // Re-throw to allow caller to handle
   }
 };
-
-/**
- * Send OTP email
- * @param {string} to - Recipient email
- * @param {string} otp - OTP code
- * @returns {Promise<Object>} Email sending result
- */
-export const sendOtpEmail = async (
-  to: string,
-  otp: string
-): Promise<object> => {
-  const transporter = nodemailer.createTransport(EMAIL_CONFIG as any);
-  const mailOptions = {
-    from: DEFAULT_EMAIL_OPTIONS.from,
-    to,
-    subject: "Your OTP Code",
-    html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #2563eb;">Password Reset Request</h2>
-        <p>Your OTP code for password reset is:</p>
-        <div style="background: #f3f4f6; padding: 10px 15px; display: inline-block; 
-                   border-radius: 4px; font-size: 24px; font-weight: bold; letter-spacing: 2px;">
-          ${otp}
-        </div>
-        <p style="margin-top: 20px;">This code will expire in 10 minutes.</p>
-        <p>If you didn't request this, please ignore this email.</p>
-      </div>
-    `,
-  };
-
-  return transporter.sendMail(mailOptions);
-};
-
-/**
- * Send password reset success email
- * @param {string} to - Recipient email
- * @returns {Promise<Object>} Email sending result
- */
-export const sendPasswordResetSuccessEmail = async (
-  to: string
-): Promise<object> => {
-  const transporter = nodemailer.createTransport(EMAIL_CONFIG as any);
-  const mailOptions = {
-    from: DEFAULT_EMAIL_OPTIONS.from,
-    to,
-    subject: "Password Changed Successfully",
-    html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #2563eb;">Password Updated</h2>
-        <p>Your password has been successfully changed.</p>
-        <p>If you didn't make this change, please contact our support team immediately.</p>
-      </div>
-    `,
-  };
-
-  return transporter.sendMail(mailOptions);
-};
-
-// Account Creation
-export const sendRegistrationCredential = async ({
-  name,
-  email,
-  password,
-  orgName,
-  orgAddress,
-}: {
-  name: string;
-  email: string;
-  password: string;
-  orgName?: string;
-  orgAddress?: string;
-}) => {
-  console.log(
-    `Congratulations ${name} ${email} you account has beeen successfulyy Created `
-  );
-  console.log(`Organization : ${orgName} , Address : ${orgAddress}`);
-  console.log(
-    `Use this password login first time make sure to upate password ${password}`
-  );
-};
-
-// // Example usage
-// const sendTestEmail = async () => {
-//   try {
-//     await sendEmail({
-//       to: 'recipient@example.com',
-//       subject: 'Hello ✔',
-//       text: 'Hello world?',
-//       html: '<b>Hello world?</b>',
-//     });
-//   } catch (error) {
-//     console.error('Failed to send test email:', error);
-//   }
-// };
-
-// // Only run if this is the main module (not when imported)
-// if (import.meta.url === `file://${process.argv[1]}`) {
-//   sendTestEmail();
-// }
 
 export default sendEmail;

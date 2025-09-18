@@ -8,10 +8,10 @@ import createTokens, {
   createAccessToken,
   verifyRefreshToken,
 } from "../../utils/jwt";
-import {
-  sendOtpEmail,
-  sendPasswordResetSuccessEmail,
-} from "../../services/emailService";
+// import {
+//   sendOtpEmail,
+//   sendPasswordResetSuccessEmail,
+// } from "../../services/emailService";
 import { Organization } from "../../generated/prisma";
 import verifyGoogleToken from "../../services/googleAuthService";
 
@@ -368,8 +368,8 @@ export const updateRolePermissions = async (req: Request, res: Response) => {
  * FORGET PASSWORD
  * RESET PASSWORD FLOW
  * */
-const otpStore = new Map(); // In-memory store for OTPs
-const resetTokens = new Map(); // In-memory store for reset tokens
+// const otpStore = new Map(); // In-memory store for OTPs
+// const resetTokens = new Map(); // In-memory store for reset tokens
 const generateOtp = (): string =>
   Math.floor(100000 + Math.random() * 900000).toString();
 
@@ -390,14 +390,18 @@ export const sendOtp = async (req: Request, res: Response) => {
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes expiry
 
     // Store OTP details
-    otpStore.set(otpId, {
-      email,
-      otp,
-      expiresAt,
-      attempts: 0,
-    });
+    await redis.set(
+      otpId,
+      JSON.stringify({
+        email,
+        otp,
+        expiresAt,
+        attempts: 0,
+      })
+    );
 
-    await sendOtpEmail(email, otp);
+    // await sendOtpEmail(email, otp);
+    console.log("Eamil Got", email, otp, otpId);
     return res.status(200).json({
       success: true,
       message: "OTP sent successfully",
@@ -417,28 +421,29 @@ export const verifyOtp = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "OTP ID and OTP are required" });
     }
 
-    const storedOtp = otpStore.get(otpId);
+    const r_storedOtp = await redis.get(otpId);
 
-    if (!storedOtp) {
+    if (!r_storedOtp) {
       return res.status(400).json({ error: "Invalid OTP ID" });
     }
-
+    const storedOtp = JSON.parse(r_storedOtp);
     if (storedOtp.otp !== otp) {
       storedOtp.attempts += 1;
-
+      await redis.set(otpId, JSON.stringify(storedOtp));
       if (storedOtp.attempts >= 3) {
-        otpStore.delete(otpId);
+        await redis.del(otpId);
         return res.status(400).json({ error: "OTP expired or invalid" });
       }
 
       return res.status(400).json({ error: "Invalid OTP" });
     }
-    otpStore.delete(otpId);
+    await redis.del(otpId);
     const update = await prisma.user.update({
       where: { email: storedOtp.email },
       data: { password: await bcrypt.hash(otp, 10) }, // For demo, using OTP as new password
     });
-    await sendPasswordResetSuccessEmail(storedOtp.email);
+    // await sendPasswordResetSuccessEmail(storedOtp.email);
+    console.log("OTP Vefy Successfully");
     return res
       .status(200)
       .json({ success: true, message: "OTP verified successfully" });

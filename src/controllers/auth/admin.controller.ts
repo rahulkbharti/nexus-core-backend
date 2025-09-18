@@ -2,6 +2,7 @@ import prisma from "../../utils/prisma";
 import { type Request, type Response } from "express";
 import { Role } from "../../generated/prisma";
 import bcrypt from "bcryptjs";
+import { welcomeAdmin } from "../../services/authEmailService";
 // Create Admin
 export const registerAdmin = async (req: Request, res: Response) => {
   const { email, password, name, orgName, orgAddress, superAdmin } = req.body;
@@ -36,6 +37,11 @@ export const registerAdmin = async (req: Request, res: Response) => {
     });
     const { password: _, ...safeUser } = admin.user;
     const safeAdmin = { ...admin, user: safeUser };
+
+    // Send welcome email
+    // welcomeAdmin({ email, name, orgName }).catch((err) => {
+    //   console.error("Failed to send welcome email:", err);
+    // });
 
     return res.status(201).json(safeAdmin);
   } catch (error: unknown) {

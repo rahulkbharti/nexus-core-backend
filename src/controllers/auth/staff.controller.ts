@@ -3,7 +3,8 @@ import prisma from "../../utils/prisma";
 import { Role } from "../../generated/prisma/index.js";
 import bcrypt from "bcryptjs";
 import generateStrongPassword from "../../utils/passwordGenerator";
-import { sendRegistrationCredential } from "../../services/emailService";
+import { welcomeStaff } from "../../services/authEmailService";
+// import { sendRegistrationCredential } from "../../services/emailService";
 
 // Create Staff
 export const registerStaff = async (req: Request, res: Response) => {
@@ -32,7 +33,25 @@ export const registerStaff = async (req: Request, res: Response) => {
     });
     const { password: _, ...safeUser } = staff.user;
     const safeStaff = { ...staff, user: safeUser };
-    sendRegistrationCredential({ name, email, password });
+    // console.log({ name, email, password });
+    // Sending Welcome Email to Staff
+    // const org = await prisma.organization.findUnique({
+    //   where: { id: req.user.organizationId },
+    // });
+    // const orgName = org?.name || "Your Organization";
+    // const orgAddress = org?.address || "Organization Address";
+    // // console.log(safeMember);
+    // // console.log({ name, email, password });
+    // welcomeStaff({
+    //   name,
+    //   email,
+    //   role: "STAFF",
+    //   orgName,
+    //   orgAddress,
+    //   password,
+    // }).catch((err) => {
+    //   console.error("Failed to send welcome email:", err);
+    // });
     return res
       .status(201)
       .json({ message: "Staff Registered", staff: safeStaff });
