@@ -46,8 +46,8 @@ export const login = async (req: Request, res: Response) => {
       where: { email },
       include: {
         admin: { include: { organizations: true } }, // Include org linked to admin
-        staff: { include: { Organization: true } }, // Include org linked to staff
-        member: { include: { Organization: true } }, // Include org linked to member
+        staff: { include: { organization: true } }, // Include org linked to staff
+        member: { include: { organization: true } }, // Include org linked to member
       },
     });
 
@@ -72,13 +72,13 @@ export const login = async (req: Request, res: Response) => {
         break;
 
       case "STAFF":
-        organization = user.staff?.Organization ?? null;
+        organization = user.staff?.organization ?? null;
         // The original user object already has the id, no need for complex access.
         permissions = Array.from(await get_permissions(user.id));
         break;
 
       case "MEMBER":
-        organization = user.member?.Organization ?? null;
+        organization = user.member?.organization ?? null;
         break;
 
       default:
@@ -173,8 +173,8 @@ export const googleAuth = async (req: Request, res: Response) => {
       where: { email: responce.email },
       include: {
         admin: { include: { organizations: true } }, // Include org linked to admin
-        staff: { include: { Organization: true } }, // Include org linked to staff
-        member: { include: { Organization: true } }, // Include org linked to member
+        staff: { include: { organization: true } }, // Include org linked to staff
+        member: { include: { organization: true } }, // Include org linked to member
       },
     });
     if (!user) {
@@ -190,13 +190,13 @@ export const googleAuth = async (req: Request, res: Response) => {
         break;
 
       case "STAFF":
-        organization = user.staff?.Organization ?? null;
+        organization = user.staff?.organization ?? null;
         // The original user object already has the id, no need for complex access.
         permissions = Array.from(await get_permissions(user.id));
         break;
 
       case "MEMBER":
-        organization = user.member?.Organization ?? null;
+        organization = user.member?.organization ?? null;
         break;
 
       default:

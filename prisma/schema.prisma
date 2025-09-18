@@ -18,17 +18,23 @@ datasource db {
 // Organizational Models
 // BUSINESS LOGIC : If Someone have to create or register organization send request to admin
 model Organization {
-  id          Int         @id @default(autoincrement())
-  name        String
-  address     String?
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  default     Boolean     @default(false)
-  adminUserId Int
-  admin       Admin       @relation(fields: [adminUserId], references: [userId])
-  member      Member[]
-  staff       Staff[]
-  staffRole   StaffRole[]
+  id               Int               @id @default(autoincrement())
+  name             String
+  address          String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  default          Boolean           @default(false)
+  adminUserId      Int
+  admin            Admin             @relation(fields: [adminUserId], references: [userId])
+  members          Member[]
+  staffs           Staff[]
+  staffRoles       StaffRole[]
+  books            Book[]
+  halls            Hall[]
+  seatReservations SeatReservation[]
+  bookReservations BookReservation[]
+  fees             Fee[]
+  payments         Payment[]
 }
 
 // AUTHENTICATION AND AUTHORIZATION MODELS
@@ -49,10 +55,14 @@ model User {
 }
 
 model Member {
-  userId         Int           @id @default(autoincrement())
-  organizationId Int
-  user           User          @relation(fields: [userId], references: [id])
-  Organization   Organization? @relation(fields: [organizationId], references: [id])
+  userId           Int               @id @default(autoincrement())
+  organizationId   Int
+  user             User              @relation(fields: [userId], references: [id])
+  organization     Organization?     @relation(fields: [organizationId], references: [id])
+  seatReservations SeatReservation[]
+  bookReservations BookReservation[]
+  fees             Fee[]
+  payments         Payment[]
 }
 
 model Staff {
@@ -62,7 +72,7 @@ model Staff {
   user           User          @relation(fields: [userId], references: [id])
   role           StaffRole     @relation(fields: [roleId], references: [id])
   permissions    Permission[]  @relation("UserPermissions")
-  Organization   Organization? @relation(fields: [organizationId], references: [id])
+  organization   Organization? @relation(fields: [organizationId], references: [id])
 }
 
 model Admin {
@@ -77,7 +87,7 @@ model StaffRole {
   name           String
   organizationId Int
   permissions    Permission[] @relation("StaffRolePermissions")
-  staff          Staff[]
+  staffs         Staff[]
   organization   Organization @relation(fields: [organizationId], references: [id])
 
   // @@unique([name, organizationId])
@@ -88,7 +98,7 @@ model Permission {
   id          Int         @id @default(autoincrement())
   name        String      @unique
   description String?
-  staffRole   StaffRole[] @relation("StaffRolePermissions")
+  staffRoles  StaffRole[] @relation("StaffRolePermissions")
   staffs      Staff[]     @relation("UserPermissions") // direct user permissions
 }
 
@@ -96,4 +106,167 @@ enum Role {
   MEMBER
   STAFF
   ADMIN
+}
+
+model Book {
+  id              Int          @id @default(autoincrement())
+  ISBN            String       @unique
+  title           String
+  author          String
+  publisher       String
+  publicationDate DateTime
+  genre           String
+  synopsis        String?
+  organizationId  Int
+  organization    Organization @relation(fields: [organizationId], references: [id])
+  copies          BookCopy[]
+
+  @@index([title, author])
+}
+
+model BookCopy {
+  id               Int               @id @default(autoincrement())
+  barcode          String            @unique
+  bookId           Int
+  status           CopyStatus        @default(AVAILABLE)
+  dateAcquired     DateTime
+  location         String
+  condition        String?
+  book             Book              @relation(fields: [bookId], references: [id])
+  bookReservations BookReservation[]
+
+  @@index([barcode, bookId])
+}
+
+enum CopyStatus {
+  AVAILABLE
+  ON_LOAN
+  DAMAGED
+  LOST
+}
+
+model Hall {
+  id             Int          @id @default(autoincrement())
+  name           String
+  description    String?
+  totalCapacity  Int
+  organizationId Int
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  seats          Seat[]
+
+  @@index([name, organizationId])
+}
+
+model Seat {
+  id              Int               @id @default(autoincrement())
+  hallId          Int
+  seatNumber      String
+  seatType        String
+  status          String
+  hall            Hall              @relation(fields: [hallId], references: [id])
+  seatReservation SeatReservation[]
+
+  @@index([hallId, seatNumber])
+}
+
+model SeatReservation {
+  id                   Int               @id @default(autoincrement())
+  seatId               Int
+  memberId             Int
+  organizationId       Int
+  reservationStartTime DateTime
+  reservationEndTime   DateTime
+  status               ReservationStatus @default(PENDING)
+  seat                 Seat              @relation(fields: [seatId], references: [id])
+  member               Member            @relation(fields: [memberId], references: [userId])
+  organization         Organization?     @relation(fields: [organizationId], references: [id])
+
+  @@index([seatId, memberId, reservationStartTime])
+}
+
+model BookReservation {
+  id             Int               @id @default(autoincrement())
+  memberId       Int
+  bookId         Int
+  organizationId Int
+  member         Member            @relation(fields: [memberId], references: [userId])
+  bookCopy       BookCopy          @relation(fields: [bookId], references: [id])
+  status         ReservationStatus @default(PENDING)
+  requestDate    DateTime          @default(now())
+  holdUntilDate  DateTime?
+  notified       Boolean           @default(false)
+  organization   Organization      @relation(fields: [organizationId], references: [id])
+}
+
+enum ReservationStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+model Fee {
+  id             Int          @id @default(autoincrement())
+  memberId       Int
+  organizationId Int
+  type           FeeType      @default(MEMBERSHIP)
+  description    String?
+  amount         Float
+  balance        Float
+  status         FeeStatus    @default(PENDING)
+  dueDate        DateTime
+  member         Member       @relation(fields: [memberId], references: [userId])
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  payments       Payment[]
+
+  @@index([memberId, status, dueDate])
+}
+
+model Payment {
+  id             Int           @id @default(autoincrement())
+  memberId       Int
+  organizationId Int
+  feeId          Int
+  amount         Float
+  paymentDate    DateTime      @default(now())
+  method         PaymentMethod
+  status         PaymentStatus @default(COMPLETED)
+  reference      String?
+  member         Member        @relation(fields: [memberId], references: [userId])
+  organization   Organization  @relation(fields: [organizationId], references: [id])
+  fee            Fee           @relation(fields: [feeId], references: [id])
+
+  @@index([memberId, organizationId, feeId, paymentDate])
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  ONLINE
+  CHEQUE
+  OTHER
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum FeeType {
+  OVERDUE
+  MEMBERSHIP
+  LOST_BOOK
+  DAMAGED_BOOK
+  PRINTING
+  MISC
+}
+
+enum FeeStatus {
+  PENDING
+  PARTIAL
+  PAID
+  OVERDUE
+  WAIVED
 }

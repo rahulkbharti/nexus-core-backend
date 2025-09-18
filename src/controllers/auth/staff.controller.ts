@@ -15,7 +15,7 @@ export const registerStaff = async (req: Request, res: Response) => {
     const staff = await prisma.staff.create({
       data: {
         role: { connect: { id: roleId } },
-        Organization: { connect: { id: req.user.organizationId } },
+        organization: { connect: { id: req.user.organizationId } },
         user: {
           create: {
             email: email,

@@ -78,3 +78,43 @@ export type StaffRole = Prisma.StaffRoleModel
  * 
  */
 export type Permission = Prisma.PermissionModel
+/**
+ * Model Book
+ * 
+ */
+export type Book = Prisma.BookModel
+/**
+ * Model BookCopy
+ * 
+ */
+export type BookCopy = Prisma.BookCopyModel
+/**
+ * Model Hall
+ * 
+ */
+export type Hall = Prisma.HallModel
+/**
+ * Model Seat
+ * 
+ */
+export type Seat = Prisma.SeatModel
+/**
+ * Model SeatReservation
+ * 
+ */
+export type SeatReservation = Prisma.SeatReservationModel
+/**
+ * Model BookReservation
+ * 
+ */
+export type BookReservation = Prisma.BookReservationModel
+/**
+ * Model Fee
+ * 
+ */
+export type Fee = Prisma.FeeModel
+/**
+ * Model Payment
+ * 
+ */
+export type Payment = Prisma.PaymentModel

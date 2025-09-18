@@ -13,7 +13,7 @@ export const registerMember = async (req: Request, res: Response) => {
     const hashedPassword = bcrypt.hashSync(password, 10);
     const member = await prisma.member.create({
       data: {
-        Organization: { connect: { id: req.user.organizationId } },
+        organization: { connect: { id: req.user.organizationId } },
         user: {
           create: {
             email,
