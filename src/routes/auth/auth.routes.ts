@@ -12,6 +12,7 @@ import {
   login,
   logout,
   refreshToken,
+  resetPassword,
   sendOtp,
   updateRolePermissions,
   updateStaffPermissions,
@@ -51,4 +52,5 @@ router.post("/change-password", authMiddleware, changePassword);
 // Forget Password route
 router.post("/send-otp", sendOtp);
 router.post("/verify-otp", verifyOtp);
+router.post("/reset-password", resetPassword);
 export default router;

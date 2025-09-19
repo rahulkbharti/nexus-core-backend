@@ -1,5 +1,7 @@
 import express, { type Router } from "express";
 import {
+  verifyEmail,
+  verifyOTP,
   registerAdmin,
   getAdmins,
   getAdminByUserId,
@@ -8,6 +10,8 @@ import {
 } from "../../../controllers/auth/admin.controller";
 
 const router: Router = express.Router();
+router.post("/verify-email", verifyEmail); // VERIFY EMAIL
+router.post("/verify-otp", verifyOTP); // VERIFY OTP
 router.post("/register", registerAdmin);
 router.get("/", getAdmins);
 router.get("/:userId", getAdminByUserId);

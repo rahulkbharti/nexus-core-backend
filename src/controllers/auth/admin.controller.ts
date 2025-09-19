@@ -2,12 +2,81 @@ import prisma from "../../utils/prisma";
 import { type Request, type Response } from "express";
 import { Role } from "../../generated/prisma";
 import bcrypt from "bcryptjs";
-import { welcomeAdmin } from "../../services/authEmailService";
+// import { welcomeAdmin } from "../../services/authEmailService";
+import redis from "../../services/redis";
+import { v4 as uuidv4 } from "uuid";
+
+const generateOtp = (): string =>
+  Math.floor(100000 + Math.random() * 900000).toString();
+// const generateOtp = (): string => "123456";
+
+// VERIFY EMAIL
+export const verifyEmail = async (req: Request, res: Response) => {
+  console.log("Verify Email Called");
+  const { email } = req.body;
+  try {
+    const user = await prisma.user.findUnique({
+      where: { email },
+    });
+    if (user) {
+      return res.status(400).json({ message: "Email Already Registered" });
+    }
+    // Generate and store OTP in Redis with expiration
+    const otpId = uuidv4();
+    const otp = generateOtp();
+
+    await redis.set(otpId, JSON.stringify({ email, otp }), "EX", 300); // OTP valid for 5 minutes
+    // In real application, send OTP to user's email here
+    console.log(`OTP for ${email}: ${otp}`); // For demonstration purposes only
+    return res.status(200).json({ message: "OTP sent successfully", otpId });
+  } catch (error) {
+    return res.status(500).json({ message: "Something Went Wrong" });
+  }
+};
+// VERIFY OTP
+export const verifyOTP = async (req: Request, res: Response) => {
+  const { otpId, otp } = req.body;
+  try {
+    const data = await redis.get(otpId);
+    if (!data) {
+      return res.status(400).json({ message: "Invalid or expired OTP" });
+    }
+    const { email, otp: storedOtp } = JSON.parse(data);
+    // In real application, verify the OTP here
+    if (otp !== storedOtp) {
+      return res.status(400).json({ message: "Invalid OTP" });
+    }
+    // Generate a reset token for password setup
+    const accountCreateToken = uuidv4();
+    await redis.set(accountCreateToken, JSON.stringify({ email }), "EX", 600); // Reset token valid for 10 minutes
+    await redis.del(otpId); // Invalidate the OTP after successful verification
+    console.log(`Account creation token for ${email}: ${accountCreateToken}`); // For demonstration purposes only
+    return res.status(200).json({
+      message: "OTP verified successfully",
+      token: accountCreateToken,
+      email: email,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: "Something Went Wrong" });
+  }
+};
 // Create Admin
 export const registerAdmin = async (req: Request, res: Response) => {
-  const { email, password, name, orgName, orgAddress, superAdmin } = req.body;
+  const { token, email, password, name, orgName, orgAddress, superAdmin } =
+    req.body;
   const hashedPassword = bcrypt.hashSync(password, 10);
   try {
+    const tokenData = await redis.get(token);
+    if (!tokenData) {
+      return res.status(400).json({ message: "Invalid or expired token" });
+    }
+    const { email: tokenEmail } = JSON.parse(tokenData);
+    console.log(tokenEmail, email);
+    if (tokenEmail !== email) {
+      return res.status(400).json({ message: "Email does not match token" });
+    }
+    await redis.del(token); // Invalidate the token after successful use
+
     // Generate a random serial number between 100000 and 999999
     const serialNumber = Math.floor(1000 + Math.random() * 9000);
 

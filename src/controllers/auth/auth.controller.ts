@@ -387,7 +387,7 @@ export const sendOtp = async (req: Request, res: Response) => {
     }
     const otp = generateOtp();
     const otpId = uuidv4();
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes expiry
+    // const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes expiry
 
     // Store OTP details
     await redis.set(
@@ -395,9 +395,11 @@ export const sendOtp = async (req: Request, res: Response) => {
       JSON.stringify({
         email,
         otp,
-        expiresAt,
+        // expiresAt,
         attempts: 0,
-      })
+      }),
+      "EX",
+      10 * 60 // Set expiry in seconds
     );
 
     // await sendOtpEmail(email, otp);
@@ -422,7 +424,6 @@ export const verifyOtp = async (req: Request, res: Response) => {
     }
 
     const r_storedOtp = await redis.get(otpId);
-
     if (!r_storedOtp) {
       return res.status(400).json({ error: "Invalid OTP ID" });
     }
@@ -437,20 +438,74 @@ export const verifyOtp = async (req: Request, res: Response) => {
 
       return res.status(400).json({ error: "Invalid OTP" });
     }
+
     await redis.del(otpId);
-    const update = await prisma.user.update({
-      where: { email: storedOtp.email },
-      data: { password: await bcrypt.hash(otp, 10) }, // For demo, using OTP as new password
-    });
+
+    const newResetToken = uuidv4();
+    await redis.set(
+      newResetToken,
+      JSON.stringify({
+        email: storedOtp.email,
+        // expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes expiry
+      }),
+      "EX",
+      10 * 60 // Set expiry in seconds
+    );
+
+    // const update = await prisma.user.update({
+    //   where: { email: storedOtp.email },
+    //   data: { password: await bcrypt.hash(otp, 10) }, // For demo, using OTP as new password
+    // });
     // await sendPasswordResetSuccessEmail(storedOtp.email);
-    console.log("OTP Vefy Successfully");
-    return res
-      .status(200)
-      .json({ success: true, message: "OTP verified successfully" });
+    // await redis.set(
+    console.log("OTP Verify Successfully");
+    return res.status(200).json({
+      success: true,
+      message: "OTP verified successfully",
+      resetToken: newResetToken,
+    });
   } catch (error) {
     return res.status(500).json({ error: "Failed to verify OTP" });
   }
 };
+export const resetPassword = async (req: Request, res: Response) => {
+  try {
+    const { resetToken, new_password } = req.body;
+
+    if (!resetToken || !new_password) {
+      return res
+        .status(400)
+        .json({ message: "Reset token and new password are required" });
+    }
+
+    const r_storedResetToken = await redis.get(resetToken);
+    if (!r_storedResetToken) {
+      return res
+        .status(400)
+        .json({ message: "Invalid or expired reset token" });
+    }
+
+    const storedResetToken = JSON.parse(r_storedResetToken);
+    const { email } = storedResetToken;
+
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const hashedNewPassword = await bcrypt.hash(new_password, 10);
+    await prisma.user.update({
+      where: { email },
+      data: { password: hashedNewPassword },
+    });
+    await redis.del(resetToken);
+    return res.status(200).json({ message: "Password reset successfully" });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Something went wrong" });
+  }
+};
+
 //  Change Password based on old passsword
 export const changePassword = async (req: Request, res: Response) => {
   try {

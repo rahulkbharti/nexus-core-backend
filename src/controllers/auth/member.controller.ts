@@ -3,7 +3,7 @@ import prisma from "../../utils/prisma";
 import { Role } from "../../generated/prisma/index.js";
 import bcrypt from "bcryptjs";
 import generateStrongPassword from "../../utils/passwordGenerator";
-import { welcomeMember, welcomeStaff } from "../../services/authEmailService";
+// import { welcomeMember, welcomeStaff } from "../../services/authEmailService";
 
 // Create member
 export const registerMember = async (req: Request, res: Response) => {
