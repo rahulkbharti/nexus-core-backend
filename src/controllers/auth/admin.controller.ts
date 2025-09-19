@@ -1,6 +1,6 @@
 import prisma from "../../utils/prisma";
 import { type Request, type Response } from "express";
-import { Role } from "../../generated/prisma";
+import { Role } from "../../generated/prisma/client";
 import bcrypt from "bcryptjs";
 // import { welcomeAdmin } from "../../services/authEmailService";
 import redis from "../../services/redis";

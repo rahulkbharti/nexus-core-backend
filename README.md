@@ -53,7 +53,7 @@
    npm run build
    # Copy
    cp generated\prisma\query_engine-windows.dll.node dist\generated\prisma\query_engine-windows.dll.node
-
+   If you are in Linux ,you different copy that same as above.
    # Run in Production
    npm run start
    ```

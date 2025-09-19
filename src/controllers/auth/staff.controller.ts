@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import prisma from "../../utils/prisma";
-import { Role } from "../../generated/prisma/index.js";
+import { Role } from "../../generated/prisma/client";
 import bcrypt from "bcryptjs";
 import generateStrongPassword from "../../utils/passwordGenerator";
 import { welcomeStaff } from "../../services/authEmailService";
