@@ -12,7 +12,7 @@ import createTokens, {
 //   sendOtpEmail,
 //   sendPasswordResetSuccessEmail,
 // } from "../../services/emailService";
-import { Organization } from "../../generated/prisma";
+import { Organization } from "../../generated/prisma/client";
 import verifyGoogleToken from "../../services/googleAuthService";
 
 // Only for Staff USER ID
