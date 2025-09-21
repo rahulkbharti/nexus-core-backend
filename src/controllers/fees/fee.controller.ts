@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 import prisma from "../../utils/prisma";
+import { userInfo } from "os";
 
 export const createFee = async (req: Request, res: Response) => {
   if (!req.user) {
@@ -44,6 +45,9 @@ export const getFees = async (req: Request, res: Response) => {
         skip,
         take: pageSize,
         orderBy: { id: "desc" },
+        include: {
+          member: { select: { user: { select: { email: true, name: true } } } },
+        },
       }),
       prisma.fee.count({
         where: { organizationId: req.user.organizationId },

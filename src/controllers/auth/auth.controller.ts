@@ -14,6 +14,10 @@ import createTokens, {
 // } from "../../services/emailService";
 import { Organization } from "../../generated/prisma/client";
 import verifyGoogleToken from "../../services/googleAuthService";
+import {
+  sendOTP,
+  successfullyChangePassword,
+} from "../../services/authEmailService";
 
 // Only for Staff USER ID
 const get_permissions = async (userId: number) => {
@@ -402,8 +406,11 @@ export const sendOtp = async (req: Request, res: Response) => {
       10 * 60 // Set expiry in seconds
     );
 
-    // await sendOtpEmail(email, otp);
-    console.log("Eamil Got", email, otp, otpId);
+    // TODO: handle this later
+    const orgName = "Your Organization";
+    sendOTP({ name: user.name ?? "", email, otp, orgName });
+
+    console.log("Email Got", email, otp, otpId);
     return res.status(200).json({
       success: true,
       message: "OTP sent successfully",
@@ -499,6 +506,18 @@ export const resetPassword = async (req: Request, res: Response) => {
       data: { password: hashedNewPassword },
     });
     await redis.del(resetToken);
+
+    const org = await prisma.organization.findUnique({
+      where: { id: req.user.organizationId },
+    });
+    const orgName = org?.name || "Your Organization";
+    const orgAddress = org?.address || "Organization Address";
+    await successfullyChangePassword({
+      name: user?.name ?? "",
+      email: user?.email,
+      orgName,
+      orgAddress,
+    });
     return res.status(200).json({ message: "Password reset successfully" });
   } catch (error) {
     console.error(error);
