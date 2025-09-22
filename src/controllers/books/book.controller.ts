@@ -137,8 +137,16 @@ export const DeleteBook = async (req: Request, res: Response) => {
     });
 
     res.json({ message: "Book deleted successfully" });
-  } catch (error: unknown) {
+  } catch (error: any) {
     console.log(error);
+    if (error.code === "P2025") {
+      return res.status(404).json({ message: "Book not found" });
+    }
+    if (error.code === "P2003") {
+      return res.status(400).json({
+        message: "You should have to delete copies first then try to delete",
+      });
+    }
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
