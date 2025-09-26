@@ -29,9 +29,10 @@ export const verifyEmail = async (req: Request, res: Response) => {
     await redis.set(otpId, JSON.stringify({ email, otp }), "EX", 300); // OTP valid for 5 minutes
     // In real application, send OTP to user's email here
     // console.log(`OTP for ${email}: ${otp}`); // For demonstration purposes only
-    sendAdminVerificationOTP({ email, otp });
+    await sendAdminVerificationOTP({ email, otp });
     return res.status(200).json({ message: "OTP sent successfully", otpId });
   } catch (error) {
+    console.log(error);
     return res.status(500).json({ message: "Something Went Wrong" });
   }
 };
@@ -59,6 +60,7 @@ export const verifyOTP = async (req: Request, res: Response) => {
       email: email,
     });
   } catch (error) {
+    console.log(error);
     return res.status(500).json({ message: "Something Went Wrong" });
   }
 };
@@ -110,7 +112,7 @@ export const registerAdmin = async (req: Request, res: Response) => {
     const safeAdmin = { ...admin, user: safeUser };
 
     // Send welcome email
-    welcomeAdmin({ email, name, orgName }).catch((err) => {
+    await welcomeAdmin({ email, name, orgName }).catch((err) => {
       console.error("Failed to send welcome email:", err);
     });
 

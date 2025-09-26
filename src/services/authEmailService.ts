@@ -13,6 +13,7 @@ const STAFF_LOGIN_URL = "http://localhost:3000/auth/staff-login"; // Added for s
 const PLATFORM_NAME = "Library Management System";
 const SUPPORT_EMAIL = "support@example.com"; // Using a more professional-looking email
 
+console.log("node env", process.env.NODE_ENV);
 // OTP SEND EMAIL
 export const sendOTP = async ({
   name,

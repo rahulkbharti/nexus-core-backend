@@ -50,7 +50,7 @@ export const registerStaff = async (req: Request, res: Response) => {
     const orgAddress = org?.address || "Organization Address";
     // console.log(safeMember);
     // console.log({ name, email, password });
-    welcomeStaff({
+    await welcomeStaff({
       name,
       email,
       role: "STAFF",

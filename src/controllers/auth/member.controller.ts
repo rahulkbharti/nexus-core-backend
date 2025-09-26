@@ -3,6 +3,7 @@ import prisma from "../../utils/prisma";
 import { Role } from "../../generated/prisma/client";
 import bcrypt from "bcryptjs";
 import generateStrongPassword from "../../utils/passwordGenerator";
+import { welcomeMember } from "../../services/authEmailService";
 // import { welcomeMember } from "../../services/authEmailService";
 // import { welcomeMember, welcomeStaff } from "../../services/authEmailService";
 
@@ -50,18 +51,18 @@ export const registerMember = async (req: Request, res: Response) => {
     const { password: _, ...safeUser } = member.user;
     const safeMember = { ...member, user: safeUser };
     // Fetch organization details
-    // const org = await prisma.organization.findUnique({
-    //   where: { id: req.user.organizationId },
-    // });
-    // const orgName = org?.name || "Your Organization";
-    // const orgAddress = org?.address || "Organization Address";
-    // // console.log(safeMember);
-    // // console.log({ name, email, password });
-    // welcomeMember({ name, email, orgName, orgAddress, password }).catch(
-    //   (err) => {
-    //     console.error("Failed to send welcome email:", err);
-    //   }
-    // );
+    const org = await prisma.organization.findUnique({
+      where: { id: req.user.organizationId },
+    });
+    const orgName = org?.name || "Your Organization";
+    const orgAddress = org?.address || "Organization Address";
+    // console.log(safeMember);
+    // console.log({ name, email, password });
+    await welcomeMember({ name, email, orgName, orgAddress, password }).catch(
+      (err) => {
+        console.error("Failed to send welcome email:", err);
+      }
+    );
     return res
       .status(201)
       .json({ message: "Member Registered", member: safeMember });

@@ -408,7 +408,7 @@ export const sendOtp = async (req: Request, res: Response) => {
 
     // TODO: handle this later
     const orgName = "Your Organization";
-    sendOTP({ name: user.name ?? "", email, otp, orgName });
+    await sendOTP({ name: user.name ?? "", email, otp, orgName });
 
     console.log("Email Got", email, otp, otpId);
     return res.status(200).json({
@@ -459,12 +459,6 @@ export const verifyOtp = async (req: Request, res: Response) => {
       10 * 60 // Set expiry in seconds
     );
 
-    // const update = await prisma.user.update({
-    //   where: { email: storedOtp.email },
-    //   data: { password: await bcrypt.hash(otp, 10) }, // For demo, using OTP as new password
-    // });
-    // await sendPasswordResetSuccessEmail(storedOtp.email);
-    // await redis.set(
     console.log("OTP Verify Successfully");
     return res.status(200).json({
       success: true,
@@ -524,7 +518,6 @@ export const resetPassword = async (req: Request, res: Response) => {
     return res.status(500).json({ message: "Something went wrong" });
   }
 };
-
 //  Change Password based on old passsword
 export const changePassword = async (req: Request, res: Response) => {
   try {
