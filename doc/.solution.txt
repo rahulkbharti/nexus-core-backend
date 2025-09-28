@@ -1,11 +1,14 @@
 
-# Problem 1 : tsc && tsc-alias --resolve-full-paths not copying other files like "query_engine-windows.dll.node" 
+# Challange 1 : tsc && tsc-alias --resolve-full-paths not copying other files like "query_engine-windows.dll.node" 
 So youmay have to copy it mannually
 make sure to copy that file when you make CI_CD 
 
-# Problem 2 : Added Big File IN git commit histry
+# Challange 2 : Added Big File IN git commit histry
 # install if not available
 pip install git-filter-repo
 
 # remove the big file from entire history
 git filter-repo --path path/to/bigfile --invert-paths
+
+# Challange 3 : Gmail app password is not working on render.com because render.com block the port which gmail app password use.
+Sloution using resend (Solution found by google search)

@@ -3,7 +3,9 @@ import sendEmail from "./emailService";
 import dotenv from "dotenv";
 
 // Load environment variables
-dotenv.config({ path: ".env.developement" });
+dotenv.config({
+  path: `.env.${process.env.NODE_ENV || "development"}`,
+});
 
 // Centralized constants for easy management
 const OTP_EXPIRE = "10 minutes";
