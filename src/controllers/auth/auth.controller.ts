@@ -489,7 +489,15 @@ export const resetPassword = async (req: Request, res: Response) => {
     const storedResetToken = JSON.parse(r_storedResetToken);
     const { email } = storedResetToken;
 
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await prisma.user.findUnique({
+      where: { email },
+      include: {
+        admin: { include: { organizations: true } }, // Include org linked to admin
+        staff: { include: { organization: true } }, // Include org linked to staff
+        member: { include: { organization: true } }, // Include org linked to member
+      },
+    });
+
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -501,11 +509,21 @@ export const resetPassword = async (req: Request, res: Response) => {
     });
     await redis.del(resetToken);
 
-    const org = await prisma.organization.findUnique({
-      where: { id: req.user.organizationId },
-    });
-    const orgName = org?.name || "Your Organization";
-    const orgAddress = org?.address || "Organization Address";
+    // Determine organization name and address based on user role
+    let orgName = "";
+    let orgAddress = "";
+
+    if (user.role === "ADMIN" && user.admin?.organizations?.length) {
+      orgName = "Nexus Core"; // As per your requirement
+      orgAddress = "Nexus Core Address"; // Replace with actual address if available
+    } else if (user.role === "STAFF" && user.staff?.organization) {
+      orgName = user.staff.organization.name ?? "";
+      orgAddress = user.staff.organization.address ?? "";
+    } else if (user.role === "MEMBER" && user.member?.organization) {
+      orgName = user.member.organization.name ?? "";
+      orgAddress = user.member.organization.address ?? "";
+    }
+
     await successfullyChangePassword({
       name: user?.name ?? "",
       email: user?.email,
