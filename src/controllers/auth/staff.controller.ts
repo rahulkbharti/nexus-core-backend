@@ -4,6 +4,7 @@ import { Role } from "../../generated/prisma/client";
 import bcrypt from "bcryptjs";
 import generateStrongPassword from "../../utils/passwordGenerator";
 import { welcomeStaff } from "../../services/authEmailService";
+import { permission } from "node:process";
 // import { sendRegistrationCredential } from "../../services/emailService";
 
 // Create Staff
@@ -13,9 +14,13 @@ export const registerStaff = async (req: Request, res: Response) => {
     if (!req.user) {
       return res.status(401).json({ message: "Unauthorized" });
     }
-    const { email, name, roleId = 0 } = req.body;
+    const { email, name, roleId = 0, permissions } = req.body;
     const password = generateStrongPassword(8);
     const hashedPassword = bcrypt.hashSync(password, 10);
+    const permissionIds = permissions.map((p: any) =>
+      typeof p === "number" ? p : p.id
+    );
+
     const staff = await prisma.staff.create({
       data: {
         role: { connect: { id: roleId } },
@@ -28,30 +33,33 @@ export const registerStaff = async (req: Request, res: Response) => {
             role: Role.STAFF,
           },
         },
+        permissions: {
+          connect: permissionIds.map((id: number) => ({ id })),
+        },
       },
-      include: { user: true },
+      include: { user: true, permissions: true },
     });
     const { password: _, ...safeUser } = staff.user;
     const safeStaff = { ...staff, user: safeUser };
     // console.log({ name, email, password });
     // Sending Welcome Email to Staff
-    // const org = await prisma.organization.findUnique({
-    //   where: { id: req.user.organizationId },
-    // });
-    // const orgName = org?.name || "Your Organization";
-    // const orgAddress = org?.address || "Organization Address";
-    // // console.log(safeMember);
-    // // console.log({ name, email, password });
-    // welcomeStaff({
-    //   name,
-    //   email,
-    //   role: "STAFF",
-    //   orgName,
-    //   orgAddress,
-    //   password,
-    // }).catch((err) => {
-    //   console.error("Failed to send welcome email:", err);
-    // });
+    const org = await prisma.organization.findUnique({
+      where: { id: req.user.organizationId },
+    });
+    const orgName = org?.name || "Your Organization";
+    const orgAddress = org?.address || "Organization Address";
+    // console.log(safeMember);
+    // console.log({ name, email, password });
+    await welcomeStaff({
+      name,
+      email,
+      role: "STAFF",
+      orgName,
+      orgAddress,
+      password,
+    }).catch((err) => {
+      console.error("Failed to send welcome email:", err);
+    });
     return res
       .status(201)
       .json({ message: "Staff Registered", staff: safeStaff });
@@ -89,7 +97,11 @@ export const getStaffs = async (req: Request, res: Response) => {
       prisma.staff.findMany({
         skip: (pageNumber - 1) * limitNumber,
         take: limitNumber,
-        include: { user: { omit: { password: true } } },
+        include: {
+          user: { omit: { password: true } },
+          permissions: true,
+          role: true,
+        },
         where: {
           organizationId: req.user.organizationId,
           ...(roleNumber && roleNumber !== 0 ? { roleId: roleNumber } : {}),
@@ -174,7 +186,10 @@ export const updateStaff = async (req: Request, res: Response) => {
       return res.status(401).json({ message: "Unauthorized" });
     }
     const { userId } = req.params;
-    const { name, email, roleId } = req.body;
+    const { name, email, roleId, permissions } = req.body;
+    const permissionIds = permissions.map((p: any) =>
+      typeof p === "number" ? p : p.id
+    );
     const staff = await prisma.staff.update({
       where: {
         userId: Number(userId),
@@ -187,6 +202,9 @@ export const updateStaff = async (req: Request, res: Response) => {
             name: name,
             email: email,
           },
+        },
+        permissions: {
+          set: permissionIds.map((id: number) => ({ id })),
         },
       },
       include: {

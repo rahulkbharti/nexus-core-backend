@@ -1,14 +1,21 @@
 // Corrected imports - removed unused ones
 import sendEmail from "./emailService";
+import dotenv from "dotenv";
+
+// Load environment variables
+dotenv.config({
+  path: `.env.${process.env.NODE_ENV || "development"}`,
+});
 
 // Centralized constants for easy management
 const OTP_EXPIRE = "10 minutes";
 const RECOVERY_URL = "http://localhost:3000/auth/recover-password";
 const LOGIN_URL = "http://localhost:3000/auth/login";
 const STAFF_LOGIN_URL = "http://localhost:3000/auth/staff-login"; // Added for staff
-const PLATEFORM_NAME = "Library Management System";
+const PLATFORM_NAME = "Library Management System";
 const SUPPORT_EMAIL = "support@example.com"; // Using a more professional-looking email
 
+console.log("node env", process.env.NODE_ENV);
 // OTP SEND EMAIL
 export const sendOTP = async ({
   name,
@@ -43,6 +50,10 @@ export const sendOTP = async ({
         </div>
       </div>
     </div>`;
+  if (process.env.NODE_ENV === "development") {
+    console.log(`Sending OTP:- TO : ${email}, OTP :${otp}`);
+    return;
+  }
   await sendEmail({ to: email, subject: "Your Verification Code", html: body });
 };
 
@@ -91,6 +102,10 @@ export const successfullyChangePassword = async ({
         </div>
       </div>
     </div>`;
+  if (process.env.NODE_ENV === "development") {
+    console.log(`Password Change for ${email}`);
+    return;
+  }
   await sendEmail({
     to: email,
     subject: "Password Change Confirmation",
@@ -144,6 +159,10 @@ export const welcomeMember = async ({
         </div>
       </div>
     </div>`;
+  if (process.env.NODE_ENV === "development") {
+    console.log(`Welcome Member :- Name :${name}, Email : ${email}`);
+    return;
+  }
   await sendEmail({ to: email, subject: `Welcome to ${orgName}!`, html: body });
 };
 
@@ -190,13 +209,51 @@ export const welcomeStaff = async ({
         </div>
       </div>
     </div>`;
+  if (process.env.NODE_ENV === "development") {
+    console.log(`Welcome Staff :- Name :${name}, Email : ${email}`);
+    return;
+  }
   await sendEmail({
     to: email,
     subject: `Your Staff Account for ${orgName}`,
     html: body,
   });
 };
-
+// Admin Register OTP
+export const sendAdminVerificationOTP = async ({
+  email,
+  otp,
+}: {
+  email: string;
+  otp: string;
+}) => {
+  const body = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'; background-color: #f8f9fa; padding: 20px;">
+      <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
+        <div style="background-color: #0056b3; padding: 20px 30px; text-align: center;">
+          <h1 style="margin: 0; font-size: 24px; color: #ffffff; font-weight: 600;">Verify Your Email Address</h1>
+        </div>
+        <div style="padding: 30px; font-size: 16px; line-height: 1.6; color: #333333;">
+          <p style="margin: 0 0 25px 0;">Welcome to ${PLATFORM_NAME}! To complete your admin account setup, please use the verification code below.</p>
+          <div style="background-color: #eef4ff; border-left: 4px solid #007bff; padding: 20px 25px; margin-bottom: 25px; text-align: center;">
+            <p style="margin: 0 0 10px 0; font-size: 14px; color: #555;">Your Verification Code is:</p>
+            <p style="margin: 0; font-family: 'Courier New', Courier, monospace; font-size: 36px; font-weight: bold; color: #004085; letter-spacing: 4px;">${otp}</p>
+          </div>
+          <p style="font-size: 14px; color: #6c757d; text-align: center;">This code will expire in <strong>${OTP_EXPIRE}</strong>.</p>
+          <p style="font-size: 14px; color: #c0392b; text-align: center; margin-top: 20px;"><strong>If you did not request to create an account, please ignore this email.</strong> Do not share this code with anyone.</p>
+        </div>
+        <div style="background-color: #f1f1f1; padding: 20px 30px; text-align: center; font-size: 12px; color: #999999;">
+          <p style="margin: 0;">© ${new Date().getFullYear()} ${PLATFORM_NAME}. All rights reserved.</p>
+          <p style="margin: 5px 0 0 0;">This is an automated message. Please do not reply.</p>
+        </div>
+      </div>
+    </div>`;
+  if (process.env.NODE_ENV === "development") {
+    console.log(`ADMIN account OTP send to Email : ${email} , OPT : ${otp}`);
+    return;
+  }
+  await sendEmail({ to: email, subject: "Your Verification Code", html: body });
+};
 // WELCOME ADMIN
 export const welcomeAdmin = async ({
   name,
@@ -211,11 +268,11 @@ export const welcomeAdmin = async ({
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'; background-color: #f8f9fa; padding: 20px;">
       <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
         <div style="background-color: #4a148c; padding: 25px 30px; text-align: center;">
-          <h1 style="margin: 0; font-size: 26px; color: #ffffff; font-weight: 600;">Welcome to ${PLATEFORM_NAME}!</h1>
+          <h1 style="margin: 0; font-size: 26px; color: #ffffff; font-weight: 600;">Welcome to ${PLATFORM_NAME}!</h1>
         </div>
         <div style="padding: 30px; font-size: 16px; line-height: 1.6; color: #333333;">
           <p style="margin: 0 0 15px 0;">Hi <strong>${name}</strong>,</p>
-          <p style="margin: 0 0 25px 0;">A very warm welcome to the ${PLATEFORM_NAME} family! We are thrilled to partner with <strong>${orgName}</strong> and are excited to help you build a modern, efficient library management experience.</p>
+          <p style="margin: 0 0 25px 0;">A very warm welcome to the ${PLATFORM_NAME} family! We are thrilled to partner with <strong>${orgName}</strong> and are excited to help you build a modern, efficient library management experience.</p>
           <p style="font-size: 18px; font-weight: 500; color: #333; margin-bottom: 20px;">Your account is ready. Here are the first few steps to get your library up and running:</p>
           <div style="background-color: #f9f6ff; border-left: 4px solid #673ab7; padding: 15px 20px; margin-bottom: 30px;">
             <p style="margin: 0 0 10px 0;">✅ <strong>Step 1: Configure Your Library</strong><br><span style="font-size: 14px; color: #555;">Create halls for seating and set your library's operating hours.</span></p>
@@ -226,17 +283,21 @@ export const welcomeAdmin = async ({
             <a href="${LOGIN_URL}" target="_blank" style="display: inline-block; background-color: #5e35b1; color: #ffffff; padding: 14px 35px; font-size: 16px; font-weight: bold; text-decoration: none; border-radius: 5px;">Go to Your Admin Dashboard</a>
           </div>
           <p style="margin: 0;">We wish you all the best and are here to support you on your journey.</p>
-          <p style="margin: 10px 0 0 0;">Excited to have you with us,<br>The ${PLATEFORM_NAME} Team</p>
+          <p style="margin: 10px 0 0 0;">Excited to have you with us,<br>The ${PLATFORM_NAME} Team</p>
         </div>
         <div style="background-color: #f1f1f1; padding: 20px 30px; text-align: center; font-size: 12px; color: #999999;">
           <p style="margin: 0;">Have questions? Contact our support team at <a href="mailto:${SUPPORT_EMAIL}" style="color: #5e35b1;">${SUPPORT_EMAIL}</a>.</p>
-          <p style="margin: 5px 0 0 0;">© ${new Date().getFullYear()} ${PLATEFORM_NAME}. All rights reserved.</p>
+          <p style="margin: 5px 0 0 0;">© ${new Date().getFullYear()} ${PLATFORM_NAME}. All rights reserved.</p>
         </div>
       </div>
     </div>`;
+  if (process.env.NODE_ENV === "development") {
+    console.log(`Welcome Admin :- Name :${name}, Email : ${email}`);
+    return;
+  }
   await sendEmail({
     to: email,
-    subject: `Welcome to ${PLATEFORM_NAME}!`,
+    subject: `Welcome to ${PLATFORM_NAME}!`,
     html: body,
   });
 };

@@ -129,7 +129,7 @@ model BookCopy {
   barcode          String            @unique
   bookId           Int
   status           CopyStatus        @default(AVAILABLE)
-  dateAcquired     DateTime
+  dateAcquired     DateTime          @default(now())
   location         String
   condition        String?
   book             Book              @relation(fields: [bookId], references: [id])

@@ -3,6 +3,8 @@ import prisma from "../../utils/prisma";
 import { Role } from "../../generated/prisma/client";
 import bcrypt from "bcryptjs";
 import generateStrongPassword from "../../utils/passwordGenerator";
+import { welcomeMember } from "../../services/authEmailService";
+// import { welcomeMember } from "../../services/authEmailService";
 // import { welcomeMember, welcomeStaff } from "../../services/authEmailService";
 
 // Create member
@@ -14,35 +16,53 @@ export const registerMember = async (req: Request, res: Response) => {
     const { email, name } = req.body;
     const password = generateStrongPassword(8);
     const hashedPassword = bcrypt.hashSync(password, 10);
-    const member = await prisma.member.create({
-      data: {
-        organization: { connect: { id: req.user.organizationId } },
-        user: {
-          create: {
-            email,
-            name,
-            password: hashedPassword,
-            role: Role.MEMBER,
+
+    const { member, fees } = await prisma.$transaction(async (tx) => {
+      // Any additional operations can be added here
+      //Step 1 : create member account and then
+      const member = await tx.member.create({
+        data: {
+          organization: { connect: { id: req.user.organizationId } },
+          user: {
+            create: {
+              email,
+              name,
+              password: hashedPassword,
+              role: Role.MEMBER,
+            },
           },
         },
-      },
-      include: { user: true },
+        include: { user: true },
+      });
+      // Step 2: create a membership fees
+      const fees = await tx.fee.create({
+        data: {
+          member: { connect: { userId: member.userId } },
+          organization: { connect: { id: req.user.organizationId } },
+          amount: 400,
+          balance: 0,
+          dueDate: new Date(new Date().setMonth(new Date().getMonth() + 1)), // one month from now
+          description: "Monthly Membership Fee",
+          type: "MEMBERSHIP",
+        },
+      });
+      return { member, fees };
     });
     const { password: _, ...safeUser } = member.user;
     const safeMember = { ...member, user: safeUser };
     // Fetch organization details
-    // const org = await prisma.organization.findUnique({
-    //   where: { id: req.user.organizationId },
-    // });
-    // const orgName = org?.name || "Your Organization";
-    // const orgAddress = org?.address || "Organization Address";
-    // // console.log(safeMember);
-    // // console.log({ name, email, password });
-    // welcomeMember({ name, email, orgName, orgAddress, password }).catch(
-    //   (err) => {
-    //     console.error("Failed to send welcome email:", err);
-    //   }
-    // );
+    const org = await prisma.organization.findUnique({
+      where: { id: req.user.organizationId },
+    });
+    const orgName = org?.name || "Your Organization";
+    const orgAddress = org?.address || "Organization Address";
+    // console.log(safeMember);
+    // console.log({ name, email, password });
+    await welcomeMember({ name, email, orgName, orgAddress, password }).catch(
+      (err) => {
+        console.error("Failed to send welcome email:", err);
+      }
+    );
     return res
       .status(201)
       .json({ message: "Member Registered", member: safeMember });
@@ -74,6 +94,7 @@ export const getMemmbers = async (req: Request, res: Response) => {
       prisma.member.findMany({
         skip: (pageNumber - 1) * limitNumber,
         take: limitNumber,
+        orderBy: { userId: "desc" },
         include: { user: { omit: { password: true } } },
         where: { organizationId: req.user.organizationId },
       }),

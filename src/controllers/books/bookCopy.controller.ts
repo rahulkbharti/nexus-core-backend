@@ -1,13 +1,14 @@
 import type { Request, Response } from "express";
 import prisma from "../../utils/prisma";
+
 export const CreateBookCopy = async (req: Request, res: Response) => {
+  const bookId = req.params.id;
   try {
     if (!req.user) {
       return res.status(401).json({ message: "Unauthorized" });
     }
-    const { id } = req.params;
-    console.log(req.params.id);
-    if (id === undefined) {
+    console.log(bookId);
+    if (bookId === undefined) {
       return res.status(400).json({ message: "Book ID is required" });
     }
     const { barcode, status, dateAcquired, location, condition } = req.body;
@@ -18,7 +19,7 @@ export const CreateBookCopy = async (req: Request, res: Response) => {
 
     const newBookCopy = await prisma.bookCopy.create({
       data: {
-        book: { connect: { id: Number(id) } },
+        book: { connect: { id: Number(bookId) } },
         barcode,
         status,
         dateAcquired: new Date(dateAcquired),
@@ -38,6 +39,8 @@ export const CreateBookCopy = async (req: Request, res: Response) => {
 };
 
 export const GetAllBookCopies = async (req: Request, res: Response) => {
+  const bookId = req.params.id;
+  // console.log(req.params.id);
   try {
     if (!req.user) {
       return res.status(401).json({ message: "Unauthorized" });
@@ -50,9 +53,15 @@ export const GetAllBookCopies = async (req: Request, res: Response) => {
       prisma.bookCopy.findMany({
         skip,
         take: limit,
-        where: { book: { organizationId: req.user.organizationId } },
+        where: {
+          book: { organizationId: req.user.organizationId, id: Number(bookId) },
+        },
       }),
-      prisma.bookCopy.count(),
+      prisma.bookCopy.count({
+        where: {
+          book: { organizationId: req.user.organizationId, id: Number(bookId) },
+        },
+      }),
     ]);
 
     res.json({
@@ -85,6 +94,7 @@ export const GetBookCopy = async (req: Request, res: Response) => {
 };
 
 export const UpdateBookCopy = async (req: Request, res: Response) => {
+  const bookId = req.params.id;
   try {
     if (!req.user) {
       return res.status(401).json({ message: "Unauthorized" });
@@ -97,7 +107,7 @@ export const UpdateBookCopy = async (req: Request, res: Response) => {
     const { barcode, status, dateAcquired, location, condition } = req.body;
 
     const updatedBookCopy = await prisma.bookCopy.update({
-      where: { id: Number(copyId) },
+      where: { id: Number(copyId), bookId: Number(bookId) },
       data: {
         barcode,
         status,
@@ -133,6 +143,11 @@ export const DeleteBookCopy = async (req: Request, res: Response) => {
   } catch (error: any) {
     if (error.code === "P2025") {
       return res.status(404).json({ message: "Book copy not found" });
+    }
+    if (error.code === "P2002") {
+      return res
+        .status(400)
+        .json({ message: "You have to delete copies first then try to delte" });
     }
     res.status(500).json({ message: "Internal Server Error" });
   }

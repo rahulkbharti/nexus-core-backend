@@ -1,27 +1,78 @@
 import type { Request, Response } from "express";
 import prisma from "../../utils/prisma";
+import { welcomeMember } from "../../services/authEmailService";
 
 export const createPayment = async (req: Request, res: Response) => {
   if (!req.user) {
     return res.status(401).json({ message: "Unauthorized" });
   }
   try {
-    const { feeId, memberId, amount, method, status, reference } = req.body;
+    const { feeId, amount, method, status, reference } = req.body;
 
-    const payment = await prisma.payment.create({
-      data: {
-        fee: { connect: { id: feeId } },
-        member: { connect: { userId: memberId } },
-        organization: { connect: { id: req.user.organizationId } },
-        amount,
-        method,
-        status,
-        reference,
-      },
+    const { payment, fees, user } = await prisma.$transaction(async (tx) => {
+      // Step 1: Fetch current fee
+      const currentFee = await tx.fee.findUnique({
+        where: { id: feeId },
+        select: { balance: true, amount: true, memberId: true },
+      });
+
+      // Step 2 : Pay Fees
+      const payment = await tx.payment.create({
+        data: {
+          fee: { connect: { id: feeId } },
+          member: { connect: { userId: currentFee?.memberId } },
+          organization: { connect: { id: req.user.organizationId } },
+          amount,
+          method,
+          status,
+          reference,
+        },
+      });
+
+      // Step 3: Update Fee Balance
+      const newBalance = (currentFee?.balance ?? 0) + amount;
+      const totalAmount = currentFee?.amount ?? 0;
+      const fees = await tx.fee.update({
+        where: { id: feeId },
+        data: {
+          status: newBalance >= totalAmount ? "PAID" : "PARTIAL",
+          balance: {
+            increment: amount,
+          },
+        },
+      });
+
+      // Step 4 : Active the member if balance is full paid or more than 50% PAID
+      const user = await tx.user.update({
+        where: { id: currentFee?.memberId },
+        data: { isActive: newBalance >= totalAmount / 2 },
+      });
+
+      return { payment, fees, user };
     });
-
-    res.status(201).json(payment);
+    // Fetch organization details
+    const org = await prisma.organization.findUnique({
+      where: { id: req.user.organizationId },
+    });
+    const orgName = org?.name || "Your Organization";
+    const orgAddress = org?.address || "Organization Address";
+    // console.log(safeMember);
+    // console.log({ name, email, password });
+    const { name, email, password } = user || {};
+    welcomeMember({
+      name: name ?? "",
+      email: email ?? "",
+      orgName,
+      orgAddress,
+      password: password ?? "",
+    }).catch((err) => {
+      console.error("Failed to send welcome email:", err);
+    });
+    res
+      .status(201)
+      .json({ message: "Payment Successful", payment, fees, user });
   } catch (error) {
+    console.log(error);
     res.status(500).json({ error: "Failed to create payment", details: error });
   }
 };

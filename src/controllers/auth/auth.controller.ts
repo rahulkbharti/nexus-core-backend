@@ -14,6 +14,10 @@ import createTokens, {
 // } from "../../services/emailService";
 import { Organization } from "../../generated/prisma/client";
 import verifyGoogleToken from "../../services/googleAuthService";
+import {
+  sendOTP,
+  successfullyChangePassword,
+} from "../../services/authEmailService";
 
 // Only for Staff USER ID
 const get_permissions = async (userId: number) => {
@@ -402,8 +406,11 @@ export const sendOtp = async (req: Request, res: Response) => {
       10 * 60 // Set expiry in seconds
     );
 
-    // await sendOtpEmail(email, otp);
-    console.log("Eamil Got", email, otp, otpId);
+    // TODO: handle this later
+    const orgName = "Your Organization";
+    await sendOTP({ name: user.name ?? "", email, otp, orgName });
+
+    console.log("Email Got", email, otp, otpId);
     return res.status(200).json({
       success: true,
       message: "OTP sent successfully",
@@ -452,12 +459,6 @@ export const verifyOtp = async (req: Request, res: Response) => {
       10 * 60 // Set expiry in seconds
     );
 
-    // const update = await prisma.user.update({
-    //   where: { email: storedOtp.email },
-    //   data: { password: await bcrypt.hash(otp, 10) }, // For demo, using OTP as new password
-    // });
-    // await sendPasswordResetSuccessEmail(storedOtp.email);
-    // await redis.set(
     console.log("OTP Verify Successfully");
     return res.status(200).json({
       success: true,
@@ -488,7 +489,15 @@ export const resetPassword = async (req: Request, res: Response) => {
     const storedResetToken = JSON.parse(r_storedResetToken);
     const { email } = storedResetToken;
 
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await prisma.user.findUnique({
+      where: { email },
+      include: {
+        admin: { include: { organizations: true } }, // Include org linked to admin
+        staff: { include: { organization: true } }, // Include org linked to staff
+        member: { include: { organization: true } }, // Include org linked to member
+      },
+    });
+
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -499,13 +508,34 @@ export const resetPassword = async (req: Request, res: Response) => {
       data: { password: hashedNewPassword },
     });
     await redis.del(resetToken);
+
+    // Determine organization name and address based on user role
+    let orgName = "";
+    let orgAddress = "";
+
+    if (user.role === "ADMIN" && user.admin?.organizations?.length) {
+      orgName = "Nexus Core"; // As per your requirement
+      orgAddress = "Nexus Core Address"; // Replace with actual address if available
+    } else if (user.role === "STAFF" && user.staff?.organization) {
+      orgName = user.staff.organization.name ?? "";
+      orgAddress = user.staff.organization.address ?? "";
+    } else if (user.role === "MEMBER" && user.member?.organization) {
+      orgName = user.member.organization.name ?? "";
+      orgAddress = user.member.organization.address ?? "";
+    }
+
+    await successfullyChangePassword({
+      name: user?.name ?? "",
+      email: user?.email,
+      orgName,
+      orgAddress,
+    });
     return res.status(200).json({ message: "Password reset successfully" });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Something went wrong" });
   }
 };
-
 //  Change Password based on old passsword
 export const changePassword = async (req: Request, res: Response) => {
   try {
