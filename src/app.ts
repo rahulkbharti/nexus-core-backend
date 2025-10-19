@@ -28,7 +28,7 @@ app.set("trust proxy", 1);
 //   })
 // );
 
-app.use("/api", mainRouter);
+app.use("/api/v1", mainRouter);
 
 // Simple route
 app.get("/", (req: Request, res: Response) => {

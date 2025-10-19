@@ -174,6 +174,7 @@ export const getAdminByEmail = async (req: Request, res: Response) => {
     const { password, ...safeUser } = admin.user;
     return res.status(200).json({ ...admin, user: safeUser });
   } catch (error) {
+    
     return res.status(500).json({ message: "Something Went Wrong" });
   }
 };
