@@ -99,7 +99,7 @@ export const successfullyChangePassword = async ({
         </div>
       </div>
     </div>`;
-  if (process.env.NODE_ENV === "env.development") {
+  if (process.env.NODE_ENV === ".env.development") {
     console.log(`Password Change for ${email}`);
     return;
   }
@@ -156,7 +156,7 @@ export const welcomeMember = async ({
         </div>
       </div>
     </div>`;
-  if (process.env.NODE_ENV === "env.development") {
+  if (process.env.NODE_ENV === ".env.development") {
     console.log(`Welcome Member :- Name :${name}, Email : ${email}`);
     return;
   }
@@ -206,7 +206,7 @@ export const welcomeStaff = async ({
         </div>
       </div>
     </div>`;
-  if (process.env.NODE_ENV === "env.development") {
+  if (process.env.NODE_ENV === ".env.development") {
     console.log(`Welcome Staff :- Name :${name}, Email : ${email}`);
     return;
   }
@@ -245,7 +245,7 @@ export const sendAdminVerificationOTP = async ({
         </div>
       </div>
     </div>`;
-  if (process.env.NODE_ENV === "env.development") {
+  if (process.env.NODE_ENV === ".env.development") {
     console.log(`ADMIN account OTP send to Email : ${email} , OPT : ${otp}`);
     return;
   }
@@ -288,7 +288,7 @@ export const welcomeAdmin = async ({
         </div>
       </div>
     </div>`;
-  if (process.env.NODE_ENV === "env.development") {
+  if (process.env.NODE_ENV === ".env.development") {
     console.log(`Welcome Admin :- Name :${name}, Email : ${email}`);
     return;
   }
