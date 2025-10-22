@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 import { describe, it } from "node:test";
 import { expect } from "vitest";
-// dotenv.config({ path: ".env.developement" });
+// dotenv.config({ path: process.env.ENV_FILE || ".env.development" });
 
 console.log("Environment Variables:", process.env);
 // dotenv.config({ path: ".env" });

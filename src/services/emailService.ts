@@ -1,10 +1,8 @@
-import dotenv from "dotenv";
+// import dotenv from "dotenv";
 import { Resend } from "resend";
 
 // Load environment variables
-dotenv.config({
-  path: `.env.${process.env.NODE_ENV || "development"}`,
-});
+// dotenv.config({ path: process.env.ENV_FILE || ".env.development" });
 
 // Email content defaults
 const DEFAULT_EMAIL_OPTIONS = {
