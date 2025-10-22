@@ -4,9 +4,9 @@
   "main": "src/server.ts",
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/server.ts",
-    "build": "tsc && tsc-alias --resolve-full-paths",
-    "start": "node dist/server.js",
+    "dev": "cross-env ENV_FILE=.env.development tsx watch src/server.ts",
+    "build": "cross-env ENV_FILE=.env.production tsc && tsc-alias --resolve-full-paths",
+    "start": "cross-env ENV_FILE=.env.production node dist/server.js",
     "test": "vitest"
   },
   "keywords": [],
@@ -18,6 +18,7 @@
     "bcryptjs": "^3.0.2",
     "chalk": "^5.6.2",
     "cors": "^2.8.5",
+    "cross-env": "^10.1.0",
     "dotenv": "^17.2.2",
     "express": "^5.1.0",
     "express-rate-limit": "^8.1.0",

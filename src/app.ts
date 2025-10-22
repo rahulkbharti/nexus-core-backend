@@ -5,10 +5,7 @@ import mainRouter from "./routes/main.routes";
 import requestLogger from "./middlewares/requestLogger.middleware";
 // import rateLimit from "express-rate-limit";
 
-dotenv.config();
-dotenv.config({
-  path: `.env.${process.env.NODE_ENV || "development"}`,
-});
+// dotenv.config({ path: process.env.ENV_FILE || ".env.development" });
 
 const app = express();
 app.use(cors());

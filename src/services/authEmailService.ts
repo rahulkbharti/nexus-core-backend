@@ -3,10 +3,7 @@ import sendEmail from "./emailService";
 import dotenv from "dotenv";
 
 // Load environment variables
-dotenv.config({
-  path: `.env.${process.env.NODE_ENV || "development"}`,
-});
-
+// dotenv.config({ path: process.env.ENV_FILE || ".env.development" });
 // Centralized constants for easy management
 const OTP_EXPIRE = "10 minutes";
 const RECOVERY_URL = "http://localhost:3000/auth/recover-password";
@@ -15,7 +12,7 @@ const STAFF_LOGIN_URL = "http://localhost:3000/auth/staff-login"; // Added for s
 const PLATFORM_NAME = "Library Management System";
 const SUPPORT_EMAIL = "support@example.com"; // Using a more professional-looking email
 
-console.log("node env", process.env.NODE_ENV);
+// console.log("node env", process.env.NODE_ENV);
 // OTP SEND EMAIL
 export const sendOTP = async ({
   name,
@@ -50,7 +47,7 @@ export const sendOTP = async ({
         </div>
       </div>
     </div>`;
-  if (process.env.NODE_ENV === "development") {
+  if (process.env.NODE_ENV === ".env.development") {
     console.log(`Sending OTP:- TO : ${email}, OTP :${otp}`);
     return;
   }
@@ -102,7 +99,7 @@ export const successfullyChangePassword = async ({
         </div>
       </div>
     </div>`;
-  if (process.env.NODE_ENV === "development") {
+  if (process.env.NODE_ENV === "env.development") {
     console.log(`Password Change for ${email}`);
     return;
   }
@@ -159,7 +156,7 @@ export const welcomeMember = async ({
         </div>
       </div>
     </div>`;
-  if (process.env.NODE_ENV === "development") {
+  if (process.env.NODE_ENV === "env.development") {
     console.log(`Welcome Member :- Name :${name}, Email : ${email}`);
     return;
   }
@@ -209,7 +206,7 @@ export const welcomeStaff = async ({
         </div>
       </div>
     </div>`;
-  if (process.env.NODE_ENV === "development") {
+  if (process.env.NODE_ENV === "env.development") {
     console.log(`Welcome Staff :- Name :${name}, Email : ${email}`);
     return;
   }
@@ -248,7 +245,7 @@ export const sendAdminVerificationOTP = async ({
         </div>
       </div>
     </div>`;
-  if (process.env.NODE_ENV === "development") {
+  if (process.env.NODE_ENV === "env.development") {
     console.log(`ADMIN account OTP send to Email : ${email} , OPT : ${otp}`);
     return;
   }
@@ -291,7 +288,7 @@ export const welcomeAdmin = async ({
         </div>
       </div>
     </div>`;
-  if (process.env.NODE_ENV === "development") {
+  if (process.env.NODE_ENV === "env.development") {
     console.log(`Welcome Admin :- Name :${name}, Email : ${email}`);
     return;
   }

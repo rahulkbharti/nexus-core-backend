@@ -1,9 +1,6 @@
 import jwt, { SignOptions } from "jsonwebtoken";
 import dotenv from "dotenv";
-
-dotenv.config({
-  path: `.env.${process.env.NODE_ENV || "development"}`,
-});
+// dotenv.config({ path: process.env.ENV_FILE || ".env.development" });
 
 const accessTokenSecret = process.env.JWT_ACCESS_SECRET || "s";
 const refreshTokenSecret = process.env.JWT_REFRESH_SECRET || "r";
