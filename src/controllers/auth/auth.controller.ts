@@ -112,6 +112,7 @@ export const login = async (req: Request, res: Response) => {
         permissions,
         organization, // Include the full organization object here
       },
+      exp: tokens.exp,
     };
 
     return res.status(200).json({ message: "Login Successful", tokenObj });
@@ -230,6 +231,7 @@ export const googleAuth = async (req: Request, res: Response) => {
         permissions,
         organization, // Include the full organization object here
       },
+      exp: tokens.exp,
     };
 
     return res.status(200).json({ message: "Login Successful", tokenObj });
@@ -251,7 +253,7 @@ export const refreshToken = async (req: Request, res: Response) => {
     }
     const decoded = await verifyRefreshToken(refreshToken);
     if (null === decoded) {
-      return res.status(401).json({ message: "Invalid Refresh Token" });
+      return res.status(408).json({ message: "Invalid Refresh Token" });
     }
     if (decoded && typeof decoded !== "string") {
       const permissions = Array.from(await get_permissions(decoded.userId));
@@ -263,9 +265,11 @@ export const refreshToken = async (req: Request, res: Response) => {
         organizationId: decoded.organizationId,
         permissions_updated_at: Date.now(),
       });
-      return res
-        .status(200)
-        .json({ message: "Token Refreshed", refreshed_access_token: token });
+      return res.status(200).json({
+        message: "Token Refreshed",
+        refreshed_access_token: token.token,
+        exp: token.exp,
+      });
     }
     return res.status(401).json({ message: "Invalid Refresh Token" });
   } catch (e) {

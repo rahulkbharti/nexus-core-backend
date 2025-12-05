@@ -1,13 +1,18 @@
 import jwt, { SignOptions } from "jsonwebtoken";
 import dotenv from "dotenv";
+import calculateExpiration from "./calculateExpride";
 // dotenv.config({ path: process.env.ENV_FILE || ".env.development" });
 
 const accessTokenSecret = process.env.JWT_ACCESS_SECRET || "s";
 const refreshTokenSecret = process.env.JWT_REFRESH_SECRET || "r";
 
 // const accessTokenExpiresIn = process.env.JWT_EXPIRES_IN || "15m";
-const accessTokenExpiresIn = "1d";
-const refreshTokenExpiresIn = process.env.JWT_REFRESH_EXPIRES_IN || "7d";
+const accessTokenExpiresIn = process.env.JWT_ACCESS_EXPIRATION || "1d";
+const refreshTokenExpiresIn = process.env.JWT_REFRESH_EXPIRATION || "7d";
+
+// console.log(
+//   `accessTokenExpiresIn ${accessTokenExpiresIn},refreshTokenExpiresIn ${refreshTokenExpiresIn}`
+// );
 
 export const createAccessToken = (payload: {
   userId: number;
@@ -16,18 +21,22 @@ export const createAccessToken = (payload: {
   role: string;
   organizationId: number;
   permissions_updated_at: number;
-}): string => {
+}): { token: string; exp: number } => {
   if (!accessTokenSecret || !accessTokenExpiresIn) {
     console.error(
       "JWT secret or access token expiration time is not defined in environment variables."
     );
     throw new Error("Server configuration error: JWT settings are missing.");
   }
+  const expire = calculateExpiration(accessTokenExpiresIn);
   const signOptions: SignOptions = {
     expiresIn: accessTokenExpiresIn as SignOptions["expiresIn"],
     algorithm: "HS256",
   };
-  return jwt.sign({ ...payload }, accessTokenSecret, signOptions);
+  return {
+    token: jwt.sign({ ...payload }, accessTokenSecret, signOptions),
+    exp: expire,
+  };
 };
 
 export const createRefreshToken = (payload: {
@@ -76,7 +85,7 @@ export const verifyRefreshToken = async (token: string) => {
   try {
     return jwt.verify(token, refreshTokenSecret);
   } catch (error) {
-    // console.error("Failed to verify refresh token:", error);
+    console.error("Failed to verify refresh token:", error);
     return null;
   }
 };
@@ -91,6 +100,7 @@ const createTokens = (payload: {
 }) => {
   const accessToken = createAccessToken(payload);
   const refreshToken = createRefreshToken(payload);
-  return { accessToken, refreshToken };
+
+  return { accessToken: accessToken.token, refreshToken, exp: accessToken.exp }; // "1d" , 15m etc
 };
 export default createTokens;
